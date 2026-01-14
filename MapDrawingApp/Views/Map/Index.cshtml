@@ -1,0 +1,794 @@
+﻿@{
+    ViewData["Title"] = "Map Drawing";
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/map.css" />
+</head>
+<body>
+
+
+
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Toolbar -->
+            <div class="col-md-2 sidebar">
+                <h4 class="mb-3">
+                    <i class="bi bi-tools"></i> Công cụ vẽ
+                </h4>
+
+
+
+
+                <!-- Nút Chọn - Luôn hiển thị -->
+                <button id="selectBtn" class="btn btn-outline-primary btn-block mb-3">
+                    <i class="bi bi-cursor-fill"></i> Chọn đối tượng
+                </button>
+                <!-- Map Manager Button -->
+                <div class="mb-3 p-2 bg-white rounded border">
+                    <button id="mapManagerBtn" class="btn btn-success btn-block" onclick="openMapManager()">
+                        <i class="bi bi-map"></i> Quản lý bản đồ
+                    </button>
+                    <small class="text-muted d-block mt-1 text-center" style="font-size: 10px;">
+                        Hiện tại: <strong id="sidebarCurrentMapName">...</strong>
+                    </small>
+                </div>
+
+                <div class="mb-2">
+                    <button class="btn btn-info btn-sm btn-block" onclick="showCanvasSizeSettings()">
+                        <i class="bi bi-aspect-ratio"></i> Kích thước Canvas
+                    </button>
+                </div>
+
+                <!-- Accordion for tool groups -->
+                <div class="accordion accordion-flush" id="toolsAccordion">
+
+                    <!-- Nhóm 1: Hình cơ bản -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#basicShapes">
+                                <i class="bi bi-square"></i> Hình cơ bản
+                            </button>
+                        </h2>
+                        <div id="basicShapes" class="accordion-collapse collapse show" data-bs-parent="#toolsAccordion">
+                            <div class="accordion-body p-2">
+                                <button id="rectBtn" class="btn btn-outline-primary btn-sm btn-block mb-1">
+                                    <i class="bi bi-square"></i> Chữ nhật
+                                </button>
+                                <button id="circleBtn" class="btn btn-outline-primary btn-sm btn-block mb-1">
+                                    <i class="bi bi-circle"></i> Hình tròn
+                                </button>
+                                <button id="ellipseBtn" class="btn btn-outline-primary btn-sm btn-block mb-1">
+                                    <i class="bi bi-egg"></i> Ellipse
+                                </button>
+                                <button id="lineBtn" class="btn btn-outline-primary btn-sm btn-block mb-1">
+                                    <i class="bi bi-dash-lg"></i> Đường thẳng
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nhóm 2: Hình nâng cao -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#advancedShapes">
+                                <i class="bi bi-star"></i> Hình nâng cao
+                            </button>
+                        </h2>
+                        <div id="advancedShapes" class="accordion-collapse collapse" data-bs-parent="#toolsAccordion">
+                            <div class="accordion-body p-2">
+                                <button id="triangleBtn" class="btn btn-outline-primary btn-sm btn-block mb-1">
+                                    <i class="bi bi-triangle"></i> Tam giác
+                                </button>
+                                <button id="starBtn" class="btn btn-outline-primary btn-sm btn-block mb-1">
+                                    <i class="bi bi-star"></i> Ngôi sao
+                                </button>
+                                <button id="arrowBtn" class="btn btn-outline-primary btn-sm btn-block mb-1">
+                                    <i class="bi bi-arrow-right"></i> Mũi tên
+                                </button>
+                                <button id="polygonBtn" class="btn btn-outline-primary btn-sm btn-block mb-1">
+                                    <i class="bi bi-hexagon"></i> Đa giác
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nhóm 3: Nội dung -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#contentTools">
+                                <i class="bi bi-file-text"></i> Nội dung
+                            </button>
+                        </h2>
+                        <div id="contentTools" class="accordion-collapse collapse" data-bs-parent="#toolsAccordion">
+                            <div class="accordion-body p-2">
+                                <button id="textBtn" class="btn btn-outline-primary btn-sm btn-block mb-1">
+                                    <i class="bi bi-fonts"></i> Văn bản
+                                </button>
+                                <button id="imageBtn" class="btn btn-outline-primary btn-sm btn-block mb-1">
+                                    <i class="bi bi-image"></i> Hình ảnh
+                                </button>
+                                <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <hr class="my-3" />
+
+                <!-- Thuộc tính - Thu gọn được -->
+                <div class="accordion accordion-flush" id="propertiesAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#propertiesPanel">
+                                <i class="bi bi-sliders"></i> Thuộc tính
+                            </button>
+                        </h2>
+                        <div id="propertiesPanel" class="accordion-collapse collapse show" data-bs-parent="#propertiesAccordion">
+                            <div class="accordion-body p-2">
+
+                                <!-- Selected object info -->
+                                <div id="selectedObjectInfo" class="alert alert-info py-1 px-2 mb-2" style="font-size: 11px;">
+                                    <i class="bi bi-info-circle"></i> Chưa chọn
+                                </div>
+
+                                <div class="properties">
+                                    <!-- Màu viền -->
+                                    <div class="mb-2">
+                                        <label class="form-label mb-1" style="font-size: 12px;">
+                                            <i class="bi bi-palette"></i> Màu viền
+                                        </label>
+                                        <input type="color" id="colorPicker" class="form-control form-control-sm form-control-color" value="#000000">
+                                    </div>
+
+                                    <!-- Màu nền -->
+                                    <div class="mb-2">
+                                        <label class="form-label mb-1" style="font-size: 12px;">
+                                            <i class="bi bi-paint-bucket"></i> Màu nền
+                                        </label>
+                                        <input type="color" id="fillColorPicker" class="form-control form-control-sm form-control-color" value="#ffffff">
+                                    </div>
+
+                                    <!-- Độ dày -->
+                                    <div class="mb-2">
+                                        <label class="form-label mb-1" style="font-size: 12px;">
+                                            <i class="bi bi-hr"></i> Độ dày:
+                                            <span id="strokeWidthValue" class="badge bg-secondary">2</span>
+                                        </label>
+                                        <input type="range" id="strokeWidth" class="form-range" min="1" max="20" value="2">
+                                    </div>
+
+                                    <!-- Độ mờ -->
+                                    <div class="mb-2">
+                                        <label class="form-label mb-1" style="font-size: 12px;">
+                                            <i class="bi bi-brightness-high"></i> Độ mờ:
+                                            <span id="opacityValue" class="badge bg-secondary">100%</span>
+                                        </label>
+                                        <input type="range" id="opacity" class="form-range" min="0" max="1" step="0.1" value="1">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-3" />
+
+                <!-- Hành động - Thu gọn được -->
+                <div class="accordion accordion-flush" id="actionsAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#actionsPanel">
+                                <i class="bi bi-lightning"></i> Hành động
+                            </button>
+                        </h2>
+                        <div id="actionsPanel" class="accordion-collapse collapse" data-bs-parent="#actionsAccordion">
+                            <div class="accordion-body p-2">
+                                <button id="deleteBtn" class="btn btn-danger btn-sm btn-block mb-1">
+                                    <i class="bi bi-trash"></i> Xóa
+                                </button>
+                                <button id="clearBtn" class="btn btn-warning btn-sm btn-block mb-1">
+                                    <i class="bi bi-x-circle"></i> Xóa tất cả
+                                </button>
+                                <button id="saveBtn" class="btn btn-success btn-sm btn-block mb-1">
+                                    <i class="bi bi-save"></i> Lưu
+                                </button>
+                                <button id="loadBtn" class="btn btn-info btn-sm btn-block mb-1">
+                                    <i class="bi bi-download"></i> Tải lại
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Canvas Area -->
+            <div class="col-md-10">
+                <div id="canvas-container">
+                    <div id="container"></div>
+                </div>
+
+                <!-- Status Bar -->
+                <div class="status-bar">
+                    <span id="statusText">Sẵn sàng</span>
+                    <span id="connectionStatus" class="badge bg-secondary">Đang kết nối...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Object Info Modal -->
+    <div class="modal fade" id="objectInfoModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Thông tin đối tượng</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="objectInfoForm">
+                        <input type="hidden" id="objectId">
+                        <div class="mb-3">
+                            <label class="form-label">Tên:</label>
+                            <input type="text" class="form-control" id="objectName">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Mô tả:</label>
+                            <textarea class="form-control" id="objectDescription" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Loại:</label>
+                            <input type="text" class="form-control" id="objectType" readonly>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary" id="saveObjectInfo">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Image Library Modal -->
+    <div class="modal fade" id="imageLibraryModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-images"></i> Thư viện hình ảnh
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Hướng dẫn:</strong> Đặt hình ảnh vào thư mục <code>wwwroot/library/</code> để hiển thị ở đây.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <input type="text" id="imageSearchBox" class="form-control" placeholder="Tìm kiếm hình ảnh...">
+                    </div>
+
+                    <div id="imageLibraryGrid" class="image-library-grid">
+                        <div class="text-center p-4">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Đang tải...</span>
+                            </div>
+                            <p class="mt-2">Đang tải thư viện...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="textEditorModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-fonts"></i> Chỉnh sửa văn bản
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="textEditorForm">
+                        <!-- Text content -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-textarea-t"></i> Nội dung:
+                            </label>
+                            <textarea id="textContent" class="form-control" rows="4"
+                                      placeholder="Nhập văn bản..."></textarea>
+                        </div>
+
+                        <!-- Font family -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-type"></i> Font chữ:
+                            </label>
+                            <select id="textFontFamily" class="form-select">
+                                <option value="Arial">Arial</option>
+                                <option value="Times New Roman">Times New Roman</option>
+                                <option value="Courier New">Courier New</option>
+                                <option value="Georgia">Georgia</option>
+                                <option value="Verdana">Verdana</option>
+                                <option value="Comic Sans MS">Comic Sans MS</option>
+                                <option value="Impact">Impact</option>
+                                <option value="Tahoma">Tahoma</option>
+                            </select>
+                        </div>
+
+                        <div class="row">
+                            <!-- Font size -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-type-h1"></i> Cỡ chữ:
+                                    <span id="textSizeValue" class="badge bg-secondary">24</span>
+                                </label>
+                                <input type="range" id="textFontSize" class="form-range"
+                                       min="8" max="120" value="24" step="2">
+                            </div>
+
+                            <!-- Line height -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-text-paragraph"></i> Giãn dòng:
+                                    <span id="lineHeightValue" class="badge bg-secondary">1.2</span>
+                                </label>
+                                <input type="range" id="textLineHeight" class="form-range"
+                                       min="1" max="3" value="1.2" step="0.1">
+                            </div>
+                        </div>
+
+                        <!-- Text color -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-palette"></i> Màu chữ:
+                            </label>
+                            <input type="color" id="textColor" class="form-control form-control-color" value="#000000">
+                        </div>
+
+                        <!-- Text align -->
+                        <div class="mb-3">
+                            <label class="form-label d-block">
+                                <i class="bi bi-text-left"></i> Căn lề:
+                            </label>
+                            <div class="btn-group" role="group">
+                                <input type="radio" class="btn-check" name="textAlign" id="alignLeft" value="left" checked>
+                                <label class="btn btn-outline-primary btn-sm" for="alignLeft">
+                                    <i class="bi bi-text-left"></i> Trái
+                                </label>
+
+                                <input type="radio" class="btn-check" name="textAlign" id="alignCenter" value="center">
+                                <label class="btn btn-outline-primary btn-sm" for="alignCenter">
+                                    <i class="bi bi-text-center"></i> Giữa
+                                </label>
+
+                                <input type="radio" class="btn-check" name="textAlign" id="alignRight" value="right">
+                                <label class="btn btn-outline-primary btn-sm" for="alignRight">
+                                    <i class="bi bi-text-right"></i> Phải
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Text style -->
+                        <div class="mb-3">
+                            <label class="form-label d-block">
+                                <i class="bi bi-type-bold"></i> Kiểu chữ:
+                            </label>
+                            <div class="btn-group" role="group">
+                                <input type="checkbox" class="btn-check" id="textBold">
+                                <label class="btn btn-outline-primary btn-sm" for="textBold">
+                                    <i class="bi bi-type-bold"></i> Đậm
+                                </label>
+
+                                <input type="checkbox" class="btn-check" id="textItalic">
+                                <label class="btn btn-outline-primary btn-sm" for="textItalic">
+                                    <i class="bi bi-type-italic"></i> Nghiêng
+                                </label>
+
+                                <input type="checkbox" class="btn-check" id="textUnderline">
+                                <label class="btn btn-outline-primary btn-sm" for="textUnderline">
+                                    <i class="bi bi-type-underline"></i> Gạch dưới
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Preview -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-eye"></i> Xem trước:
+                            </label>
+                            <div id="textPreview" class="border rounded p-3 bg-light"
+                                 style="min-height: 80px; overflow: hidden;">
+                                <span id="previewText">Văn bản mẫu</span>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Hủy
+                    </button>
+                    <button type="button" class="btn btn-primary" id="applyTextBtn">
+                        <i class="bi bi-check-circle"></i> Áp dụng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Manager Modal -->
+    <div class="modal fade" id="mapManagerModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-map"></i> Quản lý bản đồ
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>Hiện tại:</strong> <span id="currentMapName">Chưa chọn map</span>
+                                <span id="currentMapId" class="badge bg-secondary ms-2" style="display:none;">ID: 0</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <button class="btn btn-primary" onclick="showCreateMapForm()">
+                                <i class="bi bi-plus-circle"></i> Tạo map mới
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Map List -->
+                    <div id="mapListContainer">
+                        <div class="text-center p-4">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Đang tải...</span>
+                            </div>
+                            <p class="mt-2">Đang tải danh sách map...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Đóng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Map Modal -->
+    <div class="modal fade" id="mapFormModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="mapFormTitle">
+                        <i class="bi bi-plus-circle"></i> Tạo map mới
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="mapForm">
+                        <input type="hidden" id="mapFormId" value="0">
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-card-heading"></i> Tên map: <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" id="mapFormName" class="form-control"
+                                   placeholder="Ví dụ: Bản đồ khu A" required maxlength="200">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-card-text"></i> Mô tả:
+                            </label>
+                            <textarea id="mapFormDescription" class="form-control" rows="3"
+                                      placeholder="Mô tả về map này..." maxlength="500"></textarea>
+                            <small class="text-muted">Tối đa 500 ký tự</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Hủy
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="saveMapForm()">
+                        <i class="bi bi-save"></i> Lưu
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Zoom Controls (Bottom Right) -->
+    <div class="zoom-controls">
+        <div class="zoom-display mb-2">
+            <i class="bi bi-zoom-in"></i>
+            <span id="zoomPercentage">100%</span>
+        </div>
+
+        <button class="btn btn-sm btn-light mb-1" onclick="zoomIn()" title="Phóng to (Scroll lên)">
+            <i class="bi bi-plus-lg"></i>
+        </button>
+
+        <button class="btn btn-sm btn-light mb-1" onclick="zoomOut()" title="Thu nhỏ (Scroll xuống)">
+            <i class="bi bi-dash-lg"></i>
+        </button>
+
+        <button class="btn btn-sm btn-light mb-1" onclick="zoomReset()" title="100%">
+            <i class="bi bi-arrow-clockwise"></i>
+        </button>
+
+        <button class="btn btn-sm btn-light mb-1" onclick="zoomFit()" title="Vừa khung">
+            <i class="bi bi-arrows-angle-contract"></i>
+        </button>
+
+        <button class="btn btn-sm btn-primary" onclick="showCanvasSizeSettings()" title="Cài đặt kích thước">
+            <i class="bi bi-gear"></i>
+        </button>
+    </div>
+
+    <!-- Canvas Size Settings Modal -->
+    <div class="modal fade" id="canvasSizeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-aspect-ratio"></i> Kích thước Canvas
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Lưu ý:</strong> Thay đổi kích thước canvas không ảnh hưởng đến objects đã vẽ.
+                    </div>
+
+                    <!-- Custom Size -->
+                    <h6 class="mb-3">
+                        <i class="bi bi-pencil"></i> Tùy chỉnh
+                    </h6>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Chiều rộng (px):</label>
+                            <input type="number" id="canvasSizeWidth" class="form-control"
+                                   min="400" max="10000" step="100" value="1200">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Chiều cao (px):</label>
+                            <input type="number" id="canvasSizeHeight" class="form-control"
+                                   min="300" max="10000" step="100" value="800">
+                        </div>
+                    </div>
+
+                    <!-- Preview -->
+                    <div class="mb-3 text-center p-3 bg-light rounded">
+                        <div id="canvasSizePreview" class="h5 mb-1">1200 × 800 pixels</div>
+                        <small id="canvasAspectRatio" class="text-muted">Tỷ lệ: 3:2</small>
+                    </div>
+
+                    <hr>
+
+                    <!-- Presets -->
+                    <h6 class="mb-3">
+                        <i class="bi bi-grid-3x3"></i> Kích thước có sẵn
+                    </h6>
+
+                    <div class="row g-2">
+                        <!-- Small -->
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-secondary btn-sm w-100"
+                                    onclick="setCanvasPreset(800, 600)">
+                                <div class="fw-bold">Nhỏ</div>
+                                <small>800 × 600</small><br>
+                                <small class="text-muted">4:3</small>
+                            </button>
+                        </div>
+
+                        <!-- Medium -->
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-primary btn-sm w-100"
+                                    onclick="setCanvasPreset(1200, 800)">
+                                <div class="fw-bold">Trung bình</div>
+                                <small>1200 × 800</small><br>
+                                <small class="text-muted">3:2</small>
+                            </button>
+                        </div>
+
+                        <!-- Large -->
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-secondary btn-sm w-100"
+                                    onclick="setCanvasPreset(1920, 1080)">
+                                <div class="fw-bold">Lớn</div>
+                                <small>1920 × 1080</small><br>
+                                <small class="text-muted">16:9</small>
+                            </button>
+                        </div>
+
+                        <!-- HD Portrait -->
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-secondary btn-sm w-100"
+                                    onclick="setCanvasPreset(1080, 1920)">
+                                <div class="fw-bold">HD Dọc</div>
+                                <small>1080 × 1920</small><br>
+                                <small class="text-muted">9:16</small>
+                            </button>
+                        </div>
+
+                        <!-- Square -->
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-secondary btn-sm w-100"
+                                    onclick="setCanvasPreset(1000, 1000)">
+                                <div class="fw-bold">Vuông</div>
+                                <small>1000 × 1000</small><br>
+                                <small class="text-muted">1:1</small>
+                            </button>
+                        </div>
+
+                        <!-- A4 Portrait -->
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-secondary btn-sm w-100"
+                                    onclick="setCanvasPreset(794, 1123)">
+                                <div class="fw-bold">A4 Dọc</div>
+                                <small>794 × 1123</small><br>
+                                <small class="text-muted">A4</small>
+                            </button>
+                        </div>
+
+                        <!-- A4 Landscape -->
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-secondary btn-sm w-100"
+                                    onclick="setCanvasPreset(1123, 794)">
+                                <div class="fw-bold">A4 Ngang</div>
+                                <small>1123 × 794</small><br>
+                                <small class="text-muted">A4</small>
+                            </button>
+                        </div>
+
+                        <!-- Ultra Wide -->
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-secondary btn-sm w-100"
+                                    onclick="setCanvasPreset(2560, 1080)">
+                                <div class="fw-bold">Siêu rộng</div>
+                                <small>2560 × 1080</small><br>
+                                <small class="text-muted">21:9</small>
+                            </button>
+                        </div>
+
+                        <!-- 4K -->
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-secondary btn-sm w-100"
+                                    onclick="setCanvasPreset(3840, 2160)">
+                                <div class="fw-bold">4K</div>
+                                <small>3840 × 2160</small><br>
+                                <small class="text-muted">16:9</small>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Hủy
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="applyCanvasSize()">
+                        <i class="bi bi-check-circle"></i> Áp dụng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts - Load từ local, fallback sang CDN -->
+    <!-- Bootstrap -->
+    <script src="~/lib/bootstrap/bootstrap.bundle.min.js"></script>
+    <script>
+        window.bootstrapLoaded = typeof bootstrap !== 'undefined';
+        if (!window.bootstrapLoaded) {
+            console.log('Bootstrap loading from CDN...');
+            document.write('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"><\/script>');
+        }
+    </script>
+
+    <!-- jQuery -->
+    <script src="~/lib/jquery/jquery.min.js"></script>
+    <script>
+        window.jQueryLoaded = typeof jQuery !== 'undefined';
+        if (!window.jQueryLoaded) {
+            console.log('jQuery loading from CDN...');
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"><\/script>');
+        }
+    </script>
+
+    <!-- Konva -->
+    <script src="~/lib/konva/konva.min.js"></script>
+    <script>
+        window.konvaLoaded = typeof Konva !== 'undefined';
+        if (!window.konvaLoaded) {
+            console.log('Konva loading from CDN...');
+            document.write('<script src="https://unpkg.com/konva@8.4.3/konva.min.js"><\/script>');
+        }
+    </script>
+
+    <!-- SignalR -->
+    <script src="~/lib/signalr/signalr.min.js"></script>
+    <script>
+        window.signalRLoaded = typeof signalR !== 'undefined';
+        if (!window.signalRLoaded) {
+            console.log('SignalR loading from CDN...');
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"><\/script>');
+        }
+    </script>
+
+    <!-- Wait and load app scripts -->
+    <script>
+        (function waitForLibraries() {
+            // Check if all libraries loaded
+            if (typeof jQuery === 'undefined') {
+                console.log('Waiting for jQuery...');
+                setTimeout(waitForLibraries, 100);
+                return;
+            }
+            if (typeof Konva === 'undefined') {
+                console.log('Waiting for Konva...');
+                setTimeout(waitForLibraries, 100);
+                return;
+            }
+            if (typeof signalR === 'undefined') {
+                console.log('Waiting for SignalR...');
+                setTimeout(waitForLibraries, 100);
+                return;
+            }
+
+            console.log('✓ All libraries loaded successfully!');
+            console.log('jQuery:', typeof jQuery);
+            console.log('Konva:', typeof Konva);
+            console.log('SignalR:', typeof signalR);
+
+            // Load map.js
+            var script1 = document.createElement('script');
+            script1.src = '/js/map.js';
+            script1.onload = function() {
+                console.log('✓ map.js loaded');
+
+                // Load map-advanced.js after map.js
+                var script2 = document.createElement('script');
+                script2.src = '/js/map-advanced.js';
+                script2.onload = function() {
+                    console.log('✓ map-advanced.js loaded');
+                };
+                script2.onerror = function() {
+                    console.warn('⚠ map-advanced.js failed to load (optional)');
+                };
+                document.body.appendChild(script2);
+            };
+            script1.onerror = function() {
+                console.error('✗ map.js failed to load!');
+                alert('Lỗi: Không thể load map.js. Vui lòng kiểm tra file.');
+            };
+            document.body.appendChild(script1);
+        })();
+    </script>
+
+
+
+</body>
+</html>

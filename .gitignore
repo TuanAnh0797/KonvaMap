@@ -1,0 +1,91 @@
+## ===============================
+## OS / System files
+## ===============================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+## ===============================
+## Visual Studio / Rider / VSCode
+## ===============================
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## ===============================
+## Build results
+## ===============================
+bin/
+obj/
+[Bb]uild/
+[Bb]uilds/
+
+## ===============================
+## .NET artifacts
+## ===============================
+*.dll
+*.exe
+*.pdb
+*.cache
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+
+## ===============================
+## Logs & temp files
+## ===============================
+*.log
+*.tmp
+*.temp
+*.bak
+*.old
+*.swp
+*.pid
+
+## ===============================
+## ASP.NET
+## ===============================
+wwwroot/lib/
+wwwroot/dist/
+appsettings.*.json
+!appsettings.json
+
+## ===============================
+## Entity Framework
+## ===============================
+Migrations/*.cs
+!Migrations/*ContextModelSnapshot.cs
+
+## ===============================
+## User secrets
+## ===============================
+secrets.json
+
+## ===============================
+## Docker
+## ===============================
+**/docker-compose.override.yml
+
+## ===============================
+## Publish output
+## ===============================
+publish/
+out/
+
+## ===============================
+## Test results
+## ===============================
+TestResults/
+
+## ===============================
+## Coverage
+## ===============================
+coverage/
+*.coverage
+*.coveragexml
