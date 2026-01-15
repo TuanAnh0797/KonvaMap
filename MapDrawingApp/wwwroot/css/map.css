@@ -550,3 +550,90 @@
     font-family: monospace;
     color: #0d6efd;
 }
+
+/* ===== THÊM VÀO CUỐI FILE MAP.CSS ===== */
+
+/* Top Toolbar */
+.top-toolbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 1000;
+    overflow-x: auto;
+}
+
+.toolbar-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding-right: 15px;
+    border-right: 1px solid rgba(255,255,255,0.2);
+}
+
+    .toolbar-group:last-child {
+        border-right: none;
+        margin-left: auto;
+    }
+
+.top-toolbar .btn {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white !important;
+    padding: 8px 12px;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+    .top-toolbar .btn:hover {
+        background: rgba(255,255,255,0.25);
+    }
+
+    .top-toolbar .btn.active {
+        background: white;
+        color: #667eea !important;
+        font-weight: 600;
+    }
+
+/* Adjust Sidebar */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 70px;
+    bottom: 0;
+    width: 280px;
+    z-index: 900;
+}
+
+/* Adjust Canvas */
+.canvas-area-wrapper {
+    position: fixed;
+    left: 280px;
+    top: 70px;
+    right: 0;
+    bottom: 0;
+}
+
+#canvas-container {
+    height: calc(100% - 40px);
+}
+
+.status-bar {
+    position: fixed;
+    bottom: 0;
+    left: 280px;
+    right: 0;
+}
+
+/* Zoom controls - adjust position */
+.zoom-controls {
+    bottom: 60px; /* Move up to avoid status bar */
+}

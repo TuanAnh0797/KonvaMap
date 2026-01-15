@@ -7,366 +7,402 @@
 <head>
     <title>@ViewData["Title"]</title>
     <link rel="stylesheet" href="~/css/map.css" />
+    <style>
+        /* ONLY LAYOUT CHANGES - Keep all existing functionality */
+
+        /* Top Toolbar */
+        .top-toolbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 1000;
+            overflow-x: auto;
+        }
+
+        .toolbar-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            padding-right: 15px;
+            border-right: 1px solid rgba(255,255,255,0.2);
+        }
+
+            .toolbar-group:last-child {
+                border-right: none;
+                margin-left: auto;
+            }
+
+        .top-toolbar .btn {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 12px;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+            .top-toolbar .btn:hover {
+                background: rgba(255,255,255,0.25);
+            }
+
+            .top-toolbar .btn.active {
+                background: white;
+                color: #667eea;
+                font-weight: 600;
+            }
+
+        /* Left Sidebar - Move to left, adjust top */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 70px;
+            bottom: 0;
+            width: 280px;
+            z-index: 900;
+        }
+
+        /* Canvas Area - Adjust for new layout */
+        .canvas-area-wrapper {
+            position: fixed;
+            left: 280px;
+            top: 70px;
+            right: 0;
+            bottom: 0;
+        }
+
+        #canvas-container {
+            height: calc(100% - 40px);
+        }
+
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 280px;
+            right: 0;
+        }
+
+        /* Hide old row/col structure */
+        .container-fluid, .row {
+            height: auto;
+        }
+
+        .col-md-2, .col-md-10 {
+            max-width: none;
+            flex: none;
+        }
+    </style>
 </head>
 <body>
 
+    <!-- TOP TOOLBAR (New) -->
+    <div class="top-toolbar">
+        <!-- Select Tool -->
+        <div class="toolbar-group">
+            <button id="selectBtn" class="btn btn-sm">
+                <i class="bi bi-cursor-fill"></i> Chọn
+            </button>
+        </div>
 
+        <!-- Drawing Tools -->
+        <div class="toolbar-group">
+            <button id="rectBtn" class="btn btn-sm">
+                <i class="bi bi-square"></i> Chữ nhật
+            </button>
+            <button id="circleBtn" class="btn btn-sm">
+                <i class="bi bi-circle"></i> Tròn
+            </button>
+            <button id="ellipseBtn" class="btn btn-sm">
+                <i class="bi bi-egg"></i> Ellipse
+            </button>
+            <button id="lineBtn" class="btn btn-sm">
+                <i class="bi bi-dash-lg"></i> Đường
+            </button>
+            <button id="triangleBtn" class="btn btn-sm">
+                <i class="bi bi-triangle"></i> Tam giác
+            </button>
+            <button id="starBtn" class="btn btn-sm">
+                <i class="bi bi-star"></i> Sao
+            </button>
+            <button id="arrowBtn" class="btn btn-sm">
+                <i class="bi bi-arrow-right"></i> Mũi tên
+            </button>
+            <button id="polygonBtn" class="btn btn-sm">
+                <i class="bi bi-hexagon"></i> Đa giác
+            </button>
+        </div>
 
+        <!-- Content Tools -->
+        <div class="toolbar-group">
+            <button id="textBtn" class="btn btn-sm">
+                <i class="bi bi-fonts"></i> Text
+            </button>
+            <button id="imageBtn" class="btn btn-sm">
+                <i class="bi bi-image"></i> Ảnh
+            </button>
+            <input type="file" id="imageInput" accept="image/*" style="display: none;">
+        </div>
 
+        <!-- Actions -->
+        <div class="toolbar-group">
+            <button id="deleteBtn" class="btn btn-sm">
+                <i class="bi bi-trash"></i> Xóa
+            </button>
+            <button id="clearBtn" class="btn btn-sm">
+                <i class="bi bi-x-circle"></i> Xóa hết
+            </button>
+            <button id="saveBtn" class="btn btn-sm">
+                <i class="bi bi-save"></i> Lưu
+            </button>
+
+            <div class="btn-group" role="group">
+                <button id="exportBtn" class="btn btn-sm dropdown-toggle"
+                        data-bs-toggle="dropdown">
+                    <i class="bi bi-download"></i> Xuất
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item" href="#" onclick="exportAsImage(); return false;">
+                            <i class="bi bi-file-image"></i> Xuất PNG
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#" onclick="exportAsJSON(); return false;">
+                            <i class="bi bi-file-code"></i> Xuất JSON
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#" onclick="exportAsSVG(); return false;">
+                            <i class="bi bi-file-earmark-code"></i> Xuất SVG
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="#" onclick="importFromJSON(); return false;">
+                            <i class="bi bi-upload"></i> Nhập JSON
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <input type="file" id="jsonImportInput" accept=".json" style="display: none;">
+        </div>
+
+        <!-- Map Manager -->
+        <div class="toolbar-group">
+            <button id="mapManagerBtn" class="btn btn-sm" onclick="openMapManager()">
+                <i class="bi bi-map"></i> Quản lý
+            </button>
+            <button class="btn btn-sm" onclick="showCanvasSizeSettings()">
+                <i class="bi bi-aspect-ratio"></i> Kích thước
+            </button>
+        </div>
+
+        <!-- Current Map (Right) -->
+        <div class="toolbar-group">
+            <small style="opacity: 0.8;">Hiện tại:</small>
+            <strong id="sidebarCurrentMapName" style="font-size: 13px;">...</strong>
+        </div>
+    </div>
+
+    <!-- OLD STRUCTURE (Keep for compatibility) -->
     <div class="container-fluid">
         <div class="row">
-            <!-- Toolbar -->
+            <!-- LEFT SIDEBAR (Moved but keep same code) -->
             <div class="col-md-2 sidebar">
-                <h4 class="mb-3">
-                    <i class="bi bi-tools"></i> Công cụ vẽ
+                <h4 class="mb-3" style="font-size: 14px;">
+                    <i class="bi bi-sliders"></i> Thuộc tính
                 </h4>
 
-
-
-
-                <!-- Nút Chọn - Luôn hiển thị -->
-                <button id="selectBtn" class="btn btn-outline-primary btn-block mb-3">
-                    <i class="bi bi-cursor-fill"></i> Chọn đối tượng
-                </button>
-                <!-- Map Manager Button -->
-                <div class="mb-3 p-2 bg-white rounded border">
-                    <button id="mapManagerBtn" class="btn btn-success btn-block" onclick="openMapManager()">
-                        <i class="bi bi-map"></i> Quản lý bản đồ
-                    </button>
-                    <small class="text-muted d-block mt-1 text-center" style="font-size: 10px;">
-                        Hiện tại: <strong id="sidebarCurrentMapName">...</strong>
-                    </small>
+                <!-- All existing sidebar content - EXACTLY THE SAME -->
+                <!-- Selected object info -->
+                <div id="selectedObjectInfo" class="alert alert-info py-1 px-2 mb-2" style="font-size: 11px;">
+                    <i class="bi bi-info-circle"></i> Chưa chọn
                 </div>
 
-
-                <!-- Accordion for tool groups -->
-                <div class="accordion accordion-flush" id="toolsAccordion">
-
-                    <!-- Nhóm 1: Hình cơ bản -->
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#basicShapes">
-                                <i class="bi bi-square"></i> Hình cơ bản
-                            </button>
-                        </h2>
-                        <div id="basicShapes" class="accordion-collapse collapse show" data-bs-parent="#toolsAccordion">
-                            <div class="accordion-body p-2">
-                                <button id="rectBtn" class="btn btn-outline-primary btn-sm btn-block mb-1">
-                                    <i class="bi bi-square"></i> Chữ nhật
-                                </button>
-                                <button id="circleBtn" class="btn btn-outline-primary btn-sm btn-block mb-1">
-                                    <i class="bi bi-circle"></i> Hình tròn
-                                </button>
-                                <button id="ellipseBtn" class="btn btn-outline-primary btn-sm btn-block mb-1">
-                                    <i class="bi bi-egg"></i> Ellipse
-                                </button>
-                                <button id="lineBtn" class="btn btn-outline-primary btn-sm btn-block mb-1">
-                                    <i class="bi bi-dash-lg"></i> Đường thẳng
-                                </button>
+                <div class="properties">
+                    <!-- Position (X, Y) -->
+                    <div class="property-section mb-3">
+                        <label class="form-label mb-1 fw-bold" style="font-size: 12px;">
+                            <i class="bi bi-pin-map"></i> Vị trí
+                        </label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label style="font-size: 11px;">X:</label>
+                                <input type="number" id="positionX" class="form-control form-control-sm"
+                                       value="0" step="1" disabled>
+                            </div>
+                            <div class="col-6">
+                                <label style="font-size: 11px;">Y:</label>
+                                <input type="number" id="positionY" class="form-control form-control-sm"
+                                       value="0" step="1" disabled>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Nhóm 2: Hình nâng cao -->
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#advancedShapes">
-                                <i class="bi bi-star"></i> Hình nâng cao
-                            </button>
-                        </h2>
-                        <div id="advancedShapes" class="accordion-collapse collapse" data-bs-parent="#toolsAccordion">
-                            <div class="accordion-body p-2">
-                                <button id="triangleBtn" class="btn btn-outline-primary btn-sm btn-block mb-1">
-                                    <i class="bi bi-triangle"></i> Tam giác
-                                </button>
-                                <button id="starBtn" class="btn btn-outline-primary btn-sm btn-block mb-1">
-                                    <i class="bi bi-star"></i> Ngôi sao
-                                </button>
-                                <button id="arrowBtn" class="btn btn-outline-primary btn-sm btn-block mb-1">
-                                    <i class="bi bi-arrow-right"></i> Mũi tên
-                                </button>
-                                <button id="polygonBtn" class="btn btn-outline-primary btn-sm btn-block mb-1">
-                                    <i class="bi bi-hexagon"></i> Đa giác
-                                </button>
+                    <!-- Size (Width, Height) -->
+                    <div class="property-section mb-3" id="sizeSection">
+                        <label class="form-label mb-1 fw-bold" style="font-size: 12px;">
+                            <i class="bi bi-arrows-angle-expand"></i> Kích thước
+                        </label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label style="font-size: 11px;">W:</label>
+                                <input type="number" id="objectWidth" class="form-control form-control-sm"
+                                       value="0" step="1" min="1" disabled>
+                            </div>
+                            <div class="col-6">
+                                <label style="font-size: 11px;">H:</label>
+                                <input type="number" id="objectHeight" class="form-control form-control-sm"
+                                       value="0" step="1" min="1" disabled>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Nhóm 3: Nội dung -->
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#contentTools">
-                                <i class="bi bi-file-text"></i> Nội dung
+                    <!-- Rotation -->
+                    <div class="property-section mb-3">
+                        <label class="form-label mb-1 fw-bold" style="font-size: 12px;">
+                            <i class="bi bi-arrow-clockwise"></i> Xoay:
+                            <span id="rotationValue" class="badge bg-secondary">0°</span>
+                        </label>
+                        <input type="range" id="rotation" class="form-range"
+                               min="0" max="360" value="0" step="1" disabled>
+                    </div>
+
+                    <!-- Màu viền -->
+                    <div class="property-section mb-2">
+                        <label class="form-label mb-1" style="font-size: 12px;">
+                            <i class="bi bi-palette"></i> Màu viền
+                        </label>
+                        <input type="color" id="colorPicker" class="form-control form-control-sm form-control-color"
+                               value="#000000" disabled>
+                    </div>
+
+                    <!-- Màu nền -->
+                    <div class="property-section mb-2">
+                        <label class="form-label mb-1" style="font-size: 12px;">
+                            <i class="bi bi-paint-bucket"></i> Màu nền
+                        </label>
+                        <input type="color" id="fillColorPicker" class="form-control form-control-sm form-control-color"
+                               value="#ffffff" disabled>
+                    </div>
+
+                    <!-- Độ dày -->
+                    <div class="property-section mb-2">
+                        <label class="form-label mb-1" style="font-size: 12px;">
+                            <i class="bi bi-hr"></i> Độ dày:
+                            <span id="strokeWidthValue" class="badge bg-secondary">2</span>
+                        </label>
+                        <input type="range" id="strokeWidth" class="form-range"
+                               min="1" max="20" value="2" disabled>
+                    </div>
+
+                    <!-- Độ mờ -->
+                    <div class="property-section mb-3">
+                        <label class="form-label mb-1" style="font-size: 12px;">
+                            <i class="bi bi-brightness-high"></i> Độ mờ:
+                            <span id="opacityValue" class="badge bg-secondary">100%</span>
+                        </label>
+                        <input type="range" id="opacity" class="form-range"
+                               min="0" max="1" step="0.1" value="1" disabled>
+                    </div>
+
+                    <!-- Lock/Unlock -->
+                    <div class="property-section mb-2">
+                        <div class="d-grid">
+                            <button id="lockToggleBtn" class="btn btn-sm btn-outline-warning" disabled>
+                                <i class="bi bi-unlock"></i> <span id="lockToggleText">Khóa di chuyển</span>
                             </button>
-                        </h2>
-                        <div id="contentTools" class="accordion-collapse collapse" data-bs-parent="#toolsAccordion">
-                            <div class="accordion-body p-2">
-                                <button id="textBtn" class="btn btn-outline-primary btn-sm btn-block mb-1">
-                                    <i class="bi bi-fonts"></i> Văn bản
-                                </button>
-                                <button id="imageBtn" class="btn btn-outline-primary btn-sm btn-block mb-1">
-                                    <i class="bi bi-image"></i> Hình ảnh
-                                </button>
-                                <input type="file" id="imageInput" accept="image/*" style="display: none;">
-                            </div>
                         </div>
                     </div>
 
-                </div>
+                    <!-- Advanced Properties Toggle -->
+                    <div class="property-section mt-3">
+                        <button class="btn btn-sm btn-outline-secondary w-100" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#advancedProperties">
+                            <i class="bi bi-gear"></i> Thuộc tính nâng cao
+                        </button>
 
-                <hr class="my-3" />
-
-                <!-- Thuộc tính - Thu gọn được -->
-                <div class="accordion accordion-flush" id="propertiesAccordion">
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#propertiesPanel">
-                                <i class="bi bi-sliders"></i> Thuộc tính
-                            </button>
-                        </h2>
-                        <div id="propertiesPanel" class="accordion-collapse collapse show" data-bs-parent="#propertiesAccordion">
-                            <div class="accordion-body p-2">
-
-                                <!-- Selected object info -->
-                                <div id="selectedObjectInfo" class="alert alert-info py-1 px-2 mb-2" style="font-size: 11px;">
-                                    <i class="bi bi-info-circle"></i> Chưa chọn
-                                </div>
-
-                                <div class="properties">
-                                    <!-- ✅ NEW: Position (X, Y) -->
-                                    <div class="property-section mb-3">
-                                        <label class="form-label mb-1 fw-bold" style="font-size: 12px;">
-                                            <i class="bi bi-pin-map"></i> Vị trí
-                                        </label>
-                                        <div class="row g-2">
-                                            <div class="col-6">
-                                                <label style="font-size: 11px;">X:</label>
-                                                <input type="number" id="positionX" class="form-control form-control-sm"
-                                                       value="0" step="1" disabled>
-                                            </div>
-                                            <div class="col-6">
-                                                <label style="font-size: 11px;">Y:</label>
-                                                <input type="number" id="positionY" class="form-control form-control-sm"
-                                                       value="0" step="1" disabled>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- ✅ NEW: Size (Width, Height) -->
-                                    <div class="property-section mb-3" id="sizeSection">
-                                        <label class="form-label mb-1 fw-bold" style="font-size: 12px;">
-                                            <i class="bi bi-arrows-angle-expand"></i> Kích thước
-                                        </label>
-                                        <div class="row g-2">
-                                            <div class="col-6">
-                                                <label style="font-size: 11px;">W:</label>
-                                                <input type="number" id="objectWidth" class="form-control form-control-sm"
-                                                       value="0" step="1" min="1" disabled>
-                                            </div>
-                                            <div class="col-6">
-                                                <label style="font-size: 11px;">H:</label>
-                                                <input type="number" id="objectHeight" class="form-control form-control-sm"
-                                                       value="0" step="1" min="1" disabled>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- ✅ NEW: Rotation -->
-                                    <div class="property-section mb-3">
-                                        <label class="form-label mb-1 fw-bold" style="font-size: 12px;">
-                                            <i class="bi bi-arrow-clockwise"></i> Xoay:
-                                            <span id="rotationValue" class="badge bg-secondary">0°</span>
-                                        </label>
-                                        <input type="range" id="rotation" class="form-range"
-                                               min="0" max="360" value="0" step="1" disabled>
-                                    </div>
-
-                                    <!-- Màu viền -->
-                                    <div class="property-section mb-2">
-                                        <label class="form-label mb-1" style="font-size: 12px;">
-                                            <i class="bi bi-palette"></i> Màu viền
-                                        </label>
-                                        <input type="color" id="colorPicker" class="form-control form-control-sm form-control-color"
-                                               value="#000000" disabled>
-                                    </div>
-
-                                    <!-- Màu nền -->
-                                    <div class="property-section mb-2">
-                                        <label class="form-label mb-1" style="font-size: 12px;">
-                                            <i class="bi bi-paint-bucket"></i> Màu nền
-                                        </label>
-                                        <input type="color" id="fillColorPicker" class="form-control form-control-sm form-control-color"
-                                               value="#ffffff" disabled>
-                                    </div>
-
-                                    <!-- Độ dày -->
-                                    <div class="property-section mb-2">
-                                        <label class="form-label mb-1" style="font-size: 12px;">
-                                            <i class="bi bi-hr"></i> Độ dày:
-                                            <span id="strokeWidthValue" class="badge bg-secondary">2</span>
-                                        </label>
-                                        <input type="range" id="strokeWidth" class="form-range"
-                                               min="1" max="20" value="2" disabled>
-                                    </div>
-
-                                    <!-- Độ mờ -->
-                                    <div class="property-section mb-3">
-                                        <label class="form-label mb-1" style="font-size: 12px;">
-                                            <i class="bi bi-brightness-high"></i> Độ mờ:
-                                            <span id="opacityValue" class="badge bg-secondary">100%</span>
-                                        </label>
-                                        <input type="range" id="opacity" class="form-range"
-                                               min="0" max="1" step="0.1" value="1" disabled>
-                                    </div>
-
-                                    <!-- ✅ NEW: Lock/Unlock -->
-                                    <div class="property-section mb-2">
-                                        <div class="d-grid">
-                                            <button id="lockToggleBtn" class="btn btn-sm btn-outline-warning" disabled>
-                                                <i class="bi bi-unlock"></i> <span id="lockToggleText">Khóa di chuyển</span>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <!-- ✅ NEW: Advanced Properties Toggle -->
-                                    <div class="property-section mt-3">
-                                        <button class="btn btn-sm btn-outline-secondary w-100" type="button"
-                                                data-bs-toggle="collapse" data-bs-target="#advancedProperties">
-                                            <i class="bi bi-gear"></i> Thuộc tính nâng cao
-                                        </button>
-
-                                        <div class="collapse mt-2" id="advancedProperties">
-                                            <!-- Scale X, Y -->
-                                            <div class="mb-2">
-                                                <label class="form-label mb-1" style="font-size: 11px;">
-                                                    <i class="bi bi-arrows-expand"></i> Scale X:
-                                                    <span id="scaleXValue" class="badge bg-secondary">1.0</span>
-                                                </label>
-                                                <input type="range" id="scaleX" class="form-range"
-                                                       min="0.1" max="3" value="1" step="0.1" disabled>
-                                            </div>
-
-                                            <div class="mb-2">
-                                                <label class="form-label mb-1" style="font-size: 11px;">
-                                                    <i class="bi bi-arrows-expand"></i> Scale Y:
-                                                    <span id="scaleYValue" class="badge bg-secondary">1.0</span>
-                                                </label>
-                                                <input type="range" id="scaleY" class="form-range"
-                                                       min="0.1" max="3" value="1" step="0.1" disabled>
-                                            </div>
-
-                                            <!-- Skew X, Y -->
-                                            <div class="mb-2">
-                                                <label class="form-label mb-1" style="font-size: 11px;">
-                                                    <i class="bi bi-dice-3"></i> Skew X:
-                                                    <span id="skewXValue" class="badge bg-secondary">0</span>
-                                                </label>
-                                                <input type="range" id="skewX" class="form-range"
-                                                       min="-1" max="1" value="0" step="0.1" disabled>
-                                            </div>
-
-                                            <div class="mb-2">
-                                                <label class="form-label mb-1" style="font-size: 11px;">
-                                                    <i class="bi bi-dice-3"></i> Skew Y:
-                                                    <span id="skewYValue" class="badge bg-secondary">0</span>
-                                                </label>
-                                                <input type="range" id="skewY" class="form-range"
-                                                       min="-1" max="1" value="0" step="0.1" disabled>
-                                            </div>
-
-                                            <!-- Z-Index -->
-                                            <div class="mb-2">
-                                                <div class="d-grid gap-1">
-                                                    <button id="bringToFrontBtn" class="btn btn-sm btn-outline-primary" disabled>
-                                                        <i class="bi bi-bring-to-front"></i> Đưa lên trên
-                                                    </button>
-                                                    <button id="sendToBackBtn" class="btn btn-sm btn-outline-primary" disabled>
-                                                        <i class="bi bi-send-to-back"></i> Đưa xuống dưới
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                        <div class="collapse mt-2" id="advancedProperties">
+                            <!-- Scale X, Y -->
+                            <div class="mb-2">
+                                <label class="form-label mb-1" style="font-size: 11px;">
+                                    <i class="bi bi-arrows-expand"></i> Scale X:
+                                    <span id="scaleXValue" class="badge bg-secondary">1.0</span>
+                                </label>
+                                <input type="range" id="scaleX" class="form-range"
+                                       min="0.1" max="3" value="1" step="0.1" disabled>
                             </div>
-                        </div>
-                    </div>
-                </div>
 
-                <hr class="my-3" />
+                            <div class="mb-2">
+                                <label class="form-label mb-1" style="font-size: 11px;">
+                                    <i class="bi bi-arrows-expand"></i> Scale Y:
+                                    <span id="scaleYValue" class="badge bg-secondary">1.0</span>
+                                </label>
+                                <input type="range" id="scaleY" class="form-range"
+                                       min="0.1" max="3" value="1" step="0.1" disabled>
+                            </div>
 
-                <!-- Hành động - Thu gọn được -->
-                <div class="accordion accordion-flush" id="actionsAccordion">
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#actionsPanel">
-                                <i class="bi bi-lightning"></i> Hành động
-                            </button>
-                        </h2>
-                        <div id="actionsPanel" class="accordion-collapse collapse" data-bs-parent="#actionsAccordion">
-                            <div class="accordion-body p-2">
-                                <button id="deleteBtn" class="btn btn-danger btn-sm btn-block mb-1">
-                                    <i class="bi bi-trash"></i> Xóa
-                                </button>
-                                <button id="clearBtn" class="btn btn-warning btn-sm btn-block mb-1">
-                                    <i class="bi bi-x-circle"></i> Xóa tất cả
-                                </button>
-                                <button id="saveBtn" class="btn btn-success btn-sm btn-block mb-1">
-                                    <i class="bi bi-save"></i> Lưu
-                                </button>
-                                <div class="btn-group w-100 mb-1" role="group">
-                                    <button id="exportBtn" class="btn btn-info btn-sm dropdown-toggle"
-                                            data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="bi bi-download"></i> Xuất file
+                            <!-- Skew X, Y -->
+                            <div class="mb-2">
+                                <label class="form-label mb-1" style="font-size: 11px;">
+                                    <i class="bi bi-dice-3"></i> Skew X:
+                                    <span id="skewXValue" class="badge bg-secondary">0</span>
+                                </label>
+                                <input type="range" id="skewX" class="form-range"
+                                       min="-1" max="1" value="0" step="0.1" disabled>
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label mb-1" style="font-size: 11px;">
+                                    <i class="bi bi-dice-3"></i> Skew Y:
+                                    <span id="skewYValue" class="badge bg-secondary">0</span>
+                                </label>
+                                <input type="range" id="skewY" class="form-range"
+                                       min="-1" max="1" value="0" step="0.1" disabled>
+                            </div>
+
+                            <!-- Z-Index -->
+                            <div class="mb-2">
+                                <div class="d-grid gap-1">
+                                    <button id="bringToFrontBtn" class="btn btn-sm btn-outline-primary" disabled>
+                                        <i class="bi bi-bring-to-front"></i> Đưa lên trên
                                     </button>
-                                    <ul class="dropdown-menu" style="font-size: 12px;">
-                                        <li>
-                                            <a class="dropdown-item" href="#" onclick="exportAsImage(); return false;">
-                                                <i class="bi bi-file-image"></i> Xuất ảnh PNG
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item" href="#" onclick="exportAsJSON(); return false;">
-                                                <i class="bi bi-file-code"></i> Xuất JSON
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item" href="#" onclick="exportAsSVG(); return false;">
-                                                <i class="bi bi-file-earmark-code"></i> Xuất SVG
-                                            </a>
-                                        </li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li>
-                                            <a class="dropdown-item" href="#" onclick="importFromJSON(); return false;">
-                                                <i class="bi bi-upload"></i> Nhập từ JSON
-                                            </a>
-                                        </li>
-                                    </ul>
+                                    <button id="sendToBackBtn" class="btn btn-sm btn-outline-primary" disabled>
+                                        <i class="bi bi-send-to-back"></i> Đưa xuống dưới
+                                    </button>
                                 </div>
-
-                                <!-- Hidden file input for JSON import -->
-                                <input type="file" id="jsonImportInput" accept=".json" style="display: none;">
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Canvas Area -->
+            <!-- Canvas Area (Adjusted position) -->
             <div class="col-md-10">
-                <div id="canvas-container">
-                    <div id="container"></div>
-                </div>
+                <div class="canvas-area-wrapper">
+                    <div id="canvas-container">
+                        <div id="container"></div>
+                    </div>
 
-                <!-- Status Bar -->
-                <div class="status-bar">
-                    <span id="statusText">Sẵn sàng</span>
-                    <span id="connectionStatus" class="badge bg-secondary">Đang kết nối...</span>
+                    <!-- Status Bar -->
+                    <div class="status-bar">
+                        <span id="statusText">Sẵn sàng</span>
+                        <span id="connectionStatus" class="badge bg-secondary">Đang kết nối...</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- ALL MODALS - KEEP EXACTLY THE SAME -->
     <!-- Object Info Modal -->
     <div class="modal fade" id="objectInfoModal" tabindex="-1">
         <div class="modal-dialog">
@@ -399,6 +435,7 @@
             </div>
         </div>
     </div>
+
     <!-- Image Library Modal -->
     <div class="modal fade" id="imageLibraryModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
@@ -437,6 +474,7 @@
         </div>
     </div>
 
+    <!-- Text Editor Modal -->
     <div class="modal fade" id="textEditorModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -448,7 +486,6 @@
                 </div>
                 <div class="modal-body">
                     <form id="textEditorForm">
-                        <!-- Text content -->
                         <div class="mb-3">
                             <label class="form-label">
                                 <i class="bi bi-textarea-t"></i> Nội dung:
@@ -457,7 +494,6 @@
                                       placeholder="Nhập văn bản..."></textarea>
                         </div>
 
-                        <!-- Font family -->
                         <div class="mb-3">
                             <label class="form-label">
                                 <i class="bi bi-type"></i> Font chữ:
@@ -475,7 +511,6 @@
                         </div>
 
                         <div class="row">
-                            <!-- Font size -->
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">
                                     <i class="bi bi-type-h1"></i> Cỡ chữ:
@@ -485,7 +520,6 @@
                                        min="8" max="120" value="24" step="2">
                             </div>
 
-                            <!-- Line height -->
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">
                                     <i class="bi bi-text-paragraph"></i> Giãn dòng:
@@ -496,7 +530,6 @@
                             </div>
                         </div>
 
-                        <!-- Text color -->
                         <div class="mb-3">
                             <label class="form-label">
                                 <i class="bi bi-palette"></i> Màu chữ:
@@ -504,7 +537,6 @@
                             <input type="color" id="textColor" class="form-control form-control-color" value="#000000">
                         </div>
 
-                        <!-- Text align -->
                         <div class="mb-3">
                             <label class="form-label d-block">
                                 <i class="bi bi-text-left"></i> Căn lề:
@@ -527,7 +559,6 @@
                             </div>
                         </div>
 
-                        <!-- Text style -->
                         <div class="mb-3">
                             <label class="form-label d-block">
                                 <i class="bi bi-type-bold"></i> Kiểu chữ:
@@ -550,7 +581,6 @@
                             </div>
                         </div>
 
-                        <!-- Preview -->
                         <div class="mb-3">
                             <label class="form-label">
                                 <i class="bi bi-eye"></i> Xem trước:
@@ -600,7 +630,6 @@
                         </div>
                     </div>
 
-                    <!-- Map List -->
                     <div id="mapListContainer">
                         <div class="text-center p-4">
                             <div class="spinner-border" role="status">
@@ -663,7 +692,146 @@
         </div>
     </div>
 
-    <!-- Zoom Controls (Bottom Right) -->
+    <!-- Canvas Size Settings Modal -->
+    <div class="modal fade" id="canvasSizeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-aspect-ratio"></i> Kích thước Canvas
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Lưu ý:</strong> Thay đổi kích thước canvas không ảnh hưởng đến objects đã vẽ.
+                    </div>
+
+                    <h6 class="mb-3">
+                        <i class="bi bi-pencil"></i> Tùy chỉnh
+                    </h6>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Chiều rộng (px):</label>
+                            <input type="number" id="canvasSizeWidth" class="form-control"
+                                   min="400" max="10000" step="100" value="1200">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Chiều cao (px):</label>
+                            <input type="number" id="canvasSizeHeight" class="form-control"
+                                   min="300" max="10000" step="100" value="800">
+                        </div>
+                    </div>
+
+                    <div class="mb-3 text-center p-3 bg-light rounded">
+                        <div id="canvasSizePreview" class="h5 mb-1">1200 × 800 pixels</div>
+                        <small id="canvasAspectRatio" class="text-muted">Tỷ lệ: 3:2</small>
+                    </div>
+
+                    <hr>
+
+                    <h6 class="mb-3">
+                        <i class="bi bi-grid-3x3"></i> Kích thước có sẵn
+                    </h6>
+
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-secondary btn-sm w-100"
+                                    onclick="setCanvasPreset(800, 600)">
+                                <div class="fw-bold">Nhỏ</div>
+                                <small>800 × 600</small><br>
+                                <small class="text-muted">4:3</small>
+                            </button>
+                        </div>
+
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-primary btn-sm w-100"
+                                    onclick="setCanvasPreset(1200, 800)">
+                                <div class="fw-bold">Trung bình</div>
+                                <small>1200 × 800</small><br>
+                                <small class="text-muted">3:2</small>
+                            </button>
+                        </div>
+
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-secondary btn-sm w-100"
+                                    onclick="setCanvasPreset(1920, 1080)">
+                                <div class="fw-bold">Lớn</div>
+                                <small>1920 × 1080</small><br>
+                                <small class="text-muted">16:9</small>
+                            </button>
+                        </div>
+
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-secondary btn-sm w-100"
+                                    onclick="setCanvasPreset(1080, 1920)">
+                                <div class="fw-bold">HD Dọc</div>
+                                <small>1080 × 1920</small><br>
+                                <small class="text-muted">9:16</small>
+                            </button>
+                        </div>
+
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-secondary btn-sm w-100"
+                                    onclick="setCanvasPreset(1000, 1000)">
+                                <div class="fw-bold">Vuông</div>
+                                <small>1000 × 1000</small><br>
+                                <small class="text-muted">1:1</small>
+                            </button>
+                        </div>
+
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-secondary btn-sm w-100"
+                                    onclick="setCanvasPreset(794, 1123)">
+                                <div class="fw-bold">A4 Dọc</div>
+                                <small>794 × 1123</small><br>
+                                <small class="text-muted">A4</small>
+                            </button>
+                        </div>
+
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-secondary btn-sm w-100"
+                                    onclick="setCanvasPreset(1123, 794)">
+                                <div class="fw-bold">A4 Ngang</div>
+                                <small>1123 × 794</small><br>
+                                <small class="text-muted">A4</small>
+                            </button>
+                        </div>
+
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-secondary btn-sm w-100"
+                                    onclick="setCanvasPreset(2560, 1080)">
+                                <div class="fw-bold">Siêu rộng</div>
+                                <small>2560 × 1080</small><br>
+                                <small class="text-muted">21:9</small>
+                            </button>
+                        </div>
+
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-secondary btn-sm w-100"
+                                    onclick="setCanvasPreset(3840, 2160)">
+                                <div class="fw-bold">4K</div>
+                                <small>3840 × 2160</small><br>
+                                <small class="text-muted">16:9</small>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Hủy
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="applyCanvasSize()">
+                        <i class="bi bi-check-circle"></i> Áp dụng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Zoom Controls (Bottom Right) - KEEP EXACTLY THE SAME -->
     <div class="zoom-controls">
         <div class="zoom-display mb-2">
             <i class="bi bi-zoom-in"></i>
@@ -691,159 +859,7 @@
         </button>
     </div>
 
-    <!-- Canvas Size Settings Modal -->
-    <div class="modal fade" id="canvasSizeModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="bi bi-aspect-ratio"></i> Kích thước Canvas
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle"></i>
-                        <strong>Lưu ý:</strong> Thay đổi kích thước canvas không ảnh hưởng đến objects đã vẽ.
-                    </div>
-
-                    <!-- Custom Size -->
-                    <h6 class="mb-3">
-                        <i class="bi bi-pencil"></i> Tùy chỉnh
-                    </h6>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Chiều rộng (px):</label>
-                            <input type="number" id="canvasSizeWidth" class="form-control"
-                                   min="400" max="10000" step="100" value="1200">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Chiều cao (px):</label>
-                            <input type="number" id="canvasSizeHeight" class="form-control"
-                                   min="300" max="10000" step="100" value="800">
-                        </div>
-                    </div>
-
-                    <!-- Preview -->
-                    <div class="mb-3 text-center p-3 bg-light rounded">
-                        <div id="canvasSizePreview" class="h5 mb-1">1200 × 800 pixels</div>
-                        <small id="canvasAspectRatio" class="text-muted">Tỷ lệ: 3:2</small>
-                    </div>
-
-                    <hr>
-
-                    <!-- Presets -->
-                    <h6 class="mb-3">
-                        <i class="bi bi-grid-3x3"></i> Kích thước có sẵn
-                    </h6>
-
-                    <div class="row g-2">
-                        <!-- Small -->
-                        <div class="col-md-4">
-                            <button class="btn btn-outline-secondary btn-sm w-100"
-                                    onclick="setCanvasPreset(800, 600)">
-                                <div class="fw-bold">Nhỏ</div>
-                                <small>800 × 600</small><br>
-                                <small class="text-muted">4:3</small>
-                            </button>
-                        </div>
-
-                        <!-- Medium -->
-                        <div class="col-md-4">
-                            <button class="btn btn-outline-primary btn-sm w-100"
-                                    onclick="setCanvasPreset(1200, 800)">
-                                <div class="fw-bold">Trung bình</div>
-                                <small>1200 × 800</small><br>
-                                <small class="text-muted">3:2</small>
-                            </button>
-                        </div>
-
-                        <!-- Large -->
-                        <div class="col-md-4">
-                            <button class="btn btn-outline-secondary btn-sm w-100"
-                                    onclick="setCanvasPreset(1920, 1080)">
-                                <div class="fw-bold">Lớn</div>
-                                <small>1920 × 1080</small><br>
-                                <small class="text-muted">16:9</small>
-                            </button>
-                        </div>
-
-                        <!-- HD Portrait -->
-                        <div class="col-md-4">
-                            <button class="btn btn-outline-secondary btn-sm w-100"
-                                    onclick="setCanvasPreset(1080, 1920)">
-                                <div class="fw-bold">HD Dọc</div>
-                                <small>1080 × 1920</small><br>
-                                <small class="text-muted">9:16</small>
-                            </button>
-                        </div>
-
-                        <!-- Square -->
-                        <div class="col-md-4">
-                            <button class="btn btn-outline-secondary btn-sm w-100"
-                                    onclick="setCanvasPreset(1000, 1000)">
-                                <div class="fw-bold">Vuông</div>
-                                <small>1000 × 1000</small><br>
-                                <small class="text-muted">1:1</small>
-                            </button>
-                        </div>
-
-                        <!-- A4 Portrait -->
-                        <div class="col-md-4">
-                            <button class="btn btn-outline-secondary btn-sm w-100"
-                                    onclick="setCanvasPreset(794, 1123)">
-                                <div class="fw-bold">A4 Dọc</div>
-                                <small>794 × 1123</small><br>
-                                <small class="text-muted">A4</small>
-                            </button>
-                        </div>
-
-                        <!-- A4 Landscape -->
-                        <div class="col-md-4">
-                            <button class="btn btn-outline-secondary btn-sm w-100"
-                                    onclick="setCanvasPreset(1123, 794)">
-                                <div class="fw-bold">A4 Ngang</div>
-                                <small>1123 × 794</small><br>
-                                <small class="text-muted">A4</small>
-                            </button>
-                        </div>
-
-                        <!-- Ultra Wide -->
-                        <div class="col-md-4">
-                            <button class="btn btn-outline-secondary btn-sm w-100"
-                                    onclick="setCanvasPreset(2560, 1080)">
-                                <div class="fw-bold">Siêu rộng</div>
-                                <small>2560 × 1080</small><br>
-                                <small class="text-muted">21:9</small>
-                            </button>
-                        </div>
-
-                        <!-- 4K -->
-                        <div class="col-md-4">
-                            <button class="btn btn-outline-secondary btn-sm w-100"
-                                    onclick="setCanvasPreset(3840, 2160)">
-                                <div class="fw-bold">4K</div>
-                                <small>3840 × 2160</small><br>
-                                <small class="text-muted">16:9</small>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-circle"></i> Hủy
-                    </button>
-                    <button type="button" class="btn btn-primary" onclick="applyCanvasSize()">
-                        <i class="bi bi-check-circle"></i> Áp dụng
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scripts - Load từ local, fallback sang CDN -->
-    <!-- Bootstrap -->
+    <!-- ALL SCRIPTS - KEEP EXACTLY THE SAME -->
     <script src="~/lib/bootstrap/bootstrap.bundle.min.js"></script>
     <script>
         window.bootstrapLoaded = typeof bootstrap !== 'undefined';
@@ -853,7 +869,6 @@
         }
     </script>
 
-    <!-- jQuery -->
     <script src="~/lib/jquery/jquery.min.js"></script>
     <script>
         window.jQueryLoaded = typeof jQuery !== 'undefined';
@@ -863,7 +878,6 @@
         }
     </script>
 
-    <!-- Konva -->
     <script src="~/lib/konva/konva.min.js"></script>
     <script>
         window.konvaLoaded = typeof Konva !== 'undefined';
@@ -873,7 +887,6 @@
         }
     </script>
 
-    <!-- SignalR -->
     <script src="~/lib/signalr/signalr.min.js"></script>
     <script>
         window.signalRLoaded = typeof signalR !== 'undefined';
@@ -883,10 +896,8 @@
         }
     </script>
 
-    <!-- Wait and load app scripts -->
     <script>
         (function waitForLibraries() {
-            // Check if all libraries loaded
             if (typeof jQuery === 'undefined') {
                 console.log('Waiting for jQuery...');
                 setTimeout(waitForLibraries, 100);
@@ -908,13 +919,11 @@
             console.log('Konva:', typeof Konva);
             console.log('SignalR:', typeof signalR);
 
-            // Load map.js
             var script1 = document.createElement('script');
             script1.src = '/js/map.js';
             script1.onload = function() {
                 console.log('✓ map.js loaded');
 
-                // Load map-advanced.js after map.js
                 var script2 = document.createElement('script');
                 script2.src = '/js/map-advanced.js';
                 script2.onload = function() {
@@ -932,8 +941,6 @@
             document.body.appendChild(script1);
         })();
     </script>
-
-
 
 </body>
 </html>
