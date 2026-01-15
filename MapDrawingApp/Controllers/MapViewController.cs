@@ -32,8 +32,10 @@ namespace MapDrawingApp.Controllers
             ViewBag.MapId = id;
             ViewBag.MapName = map.Name;
             ViewBag.MapDescription = map.Description;
-            ViewBag.CanvasWidth = map.CanvasWidth;
-            ViewBag.CanvasHeight = map.CanvasHeight;
+
+            // ✅ Use actual canvas size from database
+            ViewBag.CanvasWidth = map.CanvasWidth > 0 ? map.CanvasWidth : 1200;
+            ViewBag.CanvasHeight = map.CanvasHeight > 0 ? map.CanvasHeight : 800;
 
             return View();
         }
@@ -51,8 +53,6 @@ namespace MapDrawingApp.Controllers
                         id = m.Id,
                         name = m.Name,
                         description = m.Description,
-                        canvasWidth = m.CanvasWidth,
-                        canvasHeight = m.CanvasHeight,
                         createdAt = m.CreatedAt,
                         updatedAt = m.UpdatedAt,
                         objectCount = _context.MapObjects.Count(o => o.MapId == m.Id)

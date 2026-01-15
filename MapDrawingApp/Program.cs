@@ -34,7 +34,7 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Map}/{action=Index}/{id?}");
+    pattern: "{controller=MapView}/{action=Index}/{id?}");
 
 app.MapHub<MapHub>("/mapHub");
 

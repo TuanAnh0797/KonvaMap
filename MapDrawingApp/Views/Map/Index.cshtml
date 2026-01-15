@@ -38,11 +38,6 @@
                     </small>
                 </div>
 
-                <div class="mb-2">
-                    <button class="btn btn-info btn-sm btn-block" onclick="showCanvasSizeSettings()">
-                        <i class="bi bi-aspect-ratio"></i> Kích thước Canvas
-                    </button>
-                </div>
 
                 <!-- Accordion for tool groups -->
                 <div class="accordion accordion-flush" id="toolsAccordion">
@@ -138,38 +133,159 @@
                                 </div>
 
                                 <div class="properties">
+                                    <!-- ✅ NEW: Position (X, Y) -->
+                                    <div class="property-section mb-3">
+                                        <label class="form-label mb-1 fw-bold" style="font-size: 12px;">
+                                            <i class="bi bi-pin-map"></i> Vị trí
+                                        </label>
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <label style="font-size: 11px;">X:</label>
+                                                <input type="number" id="positionX" class="form-control form-control-sm"
+                                                       value="0" step="1" disabled>
+                                            </div>
+                                            <div class="col-6">
+                                                <label style="font-size: 11px;">Y:</label>
+                                                <input type="number" id="positionY" class="form-control form-control-sm"
+                                                       value="0" step="1" disabled>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- ✅ NEW: Size (Width, Height) -->
+                                    <div class="property-section mb-3" id="sizeSection">
+                                        <label class="form-label mb-1 fw-bold" style="font-size: 12px;">
+                                            <i class="bi bi-arrows-angle-expand"></i> Kích thước
+                                        </label>
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <label style="font-size: 11px;">W:</label>
+                                                <input type="number" id="objectWidth" class="form-control form-control-sm"
+                                                       value="0" step="1" min="1" disabled>
+                                            </div>
+                                            <div class="col-6">
+                                                <label style="font-size: 11px;">H:</label>
+                                                <input type="number" id="objectHeight" class="form-control form-control-sm"
+                                                       value="0" step="1" min="1" disabled>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- ✅ NEW: Rotation -->
+                                    <div class="property-section mb-3">
+                                        <label class="form-label mb-1 fw-bold" style="font-size: 12px;">
+                                            <i class="bi bi-arrow-clockwise"></i> Xoay:
+                                            <span id="rotationValue" class="badge bg-secondary">0°</span>
+                                        </label>
+                                        <input type="range" id="rotation" class="form-range"
+                                               min="0" max="360" value="0" step="1" disabled>
+                                    </div>
+
                                     <!-- Màu viền -->
-                                    <div class="mb-2">
+                                    <div class="property-section mb-2">
                                         <label class="form-label mb-1" style="font-size: 12px;">
                                             <i class="bi bi-palette"></i> Màu viền
                                         </label>
-                                        <input type="color" id="colorPicker" class="form-control form-control-sm form-control-color" value="#000000">
+                                        <input type="color" id="colorPicker" class="form-control form-control-sm form-control-color"
+                                               value="#000000" disabled>
                                     </div>
 
                                     <!-- Màu nền -->
-                                    <div class="mb-2">
+                                    <div class="property-section mb-2">
                                         <label class="form-label mb-1" style="font-size: 12px;">
                                             <i class="bi bi-paint-bucket"></i> Màu nền
                                         </label>
-                                        <input type="color" id="fillColorPicker" class="form-control form-control-sm form-control-color" value="#ffffff">
+                                        <input type="color" id="fillColorPicker" class="form-control form-control-sm form-control-color"
+                                               value="#ffffff" disabled>
                                     </div>
 
                                     <!-- Độ dày -->
-                                    <div class="mb-2">
+                                    <div class="property-section mb-2">
                                         <label class="form-label mb-1" style="font-size: 12px;">
                                             <i class="bi bi-hr"></i> Độ dày:
                                             <span id="strokeWidthValue" class="badge bg-secondary">2</span>
                                         </label>
-                                        <input type="range" id="strokeWidth" class="form-range" min="1" max="20" value="2">
+                                        <input type="range" id="strokeWidth" class="form-range"
+                                               min="1" max="20" value="2" disabled>
                                     </div>
 
                                     <!-- Độ mờ -->
-                                    <div class="mb-2">
+                                    <div class="property-section mb-3">
                                         <label class="form-label mb-1" style="font-size: 12px;">
                                             <i class="bi bi-brightness-high"></i> Độ mờ:
                                             <span id="opacityValue" class="badge bg-secondary">100%</span>
                                         </label>
-                                        <input type="range" id="opacity" class="form-range" min="0" max="1" step="0.1" value="1">
+                                        <input type="range" id="opacity" class="form-range"
+                                               min="0" max="1" step="0.1" value="1" disabled>
+                                    </div>
+
+                                    <!-- ✅ NEW: Lock/Unlock -->
+                                    <div class="property-section mb-2">
+                                        <div class="d-grid">
+                                            <button id="lockToggleBtn" class="btn btn-sm btn-outline-warning" disabled>
+                                                <i class="bi bi-unlock"></i> <span id="lockToggleText">Khóa di chuyển</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- ✅ NEW: Advanced Properties Toggle -->
+                                    <div class="property-section mt-3">
+                                        <button class="btn btn-sm btn-outline-secondary w-100" type="button"
+                                                data-bs-toggle="collapse" data-bs-target="#advancedProperties">
+                                            <i class="bi bi-gear"></i> Thuộc tính nâng cao
+                                        </button>
+
+                                        <div class="collapse mt-2" id="advancedProperties">
+                                            <!-- Scale X, Y -->
+                                            <div class="mb-2">
+                                                <label class="form-label mb-1" style="font-size: 11px;">
+                                                    <i class="bi bi-arrows-expand"></i> Scale X:
+                                                    <span id="scaleXValue" class="badge bg-secondary">1.0</span>
+                                                </label>
+                                                <input type="range" id="scaleX" class="form-range"
+                                                       min="0.1" max="3" value="1" step="0.1" disabled>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <label class="form-label mb-1" style="font-size: 11px;">
+                                                    <i class="bi bi-arrows-expand"></i> Scale Y:
+                                                    <span id="scaleYValue" class="badge bg-secondary">1.0</span>
+                                                </label>
+                                                <input type="range" id="scaleY" class="form-range"
+                                                       min="0.1" max="3" value="1" step="0.1" disabled>
+                                            </div>
+
+                                            <!-- Skew X, Y -->
+                                            <div class="mb-2">
+                                                <label class="form-label mb-1" style="font-size: 11px;">
+                                                    <i class="bi bi-dice-3"></i> Skew X:
+                                                    <span id="skewXValue" class="badge bg-secondary">0</span>
+                                                </label>
+                                                <input type="range" id="skewX" class="form-range"
+                                                       min="-1" max="1" value="0" step="0.1" disabled>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <label class="form-label mb-1" style="font-size: 11px;">
+                                                    <i class="bi bi-dice-3"></i> Skew Y:
+                                                    <span id="skewYValue" class="badge bg-secondary">0</span>
+                                                </label>
+                                                <input type="range" id="skewY" class="form-range"
+                                                       min="-1" max="1" value="0" step="0.1" disabled>
+                                            </div>
+
+                                            <!-- Z-Index -->
+                                            <div class="mb-2">
+                                                <div class="d-grid gap-1">
+                                                    <button id="bringToFrontBtn" class="btn btn-sm btn-outline-primary" disabled>
+                                                        <i class="bi bi-bring-to-front"></i> Đưa lên trên
+                                                    </button>
+                                                    <button id="sendToBackBtn" class="btn btn-sm btn-outline-primary" disabled>
+                                                        <i class="bi bi-send-to-back"></i> Đưa xuống dưới
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -198,9 +314,38 @@
                                 <button id="saveBtn" class="btn btn-success btn-sm btn-block mb-1">
                                     <i class="bi bi-save"></i> Lưu
                                 </button>
-                                <button id="loadBtn" class="btn btn-info btn-sm btn-block mb-1">
-                                    <i class="bi bi-download"></i> Tải lại
-                                </button>
+                                <div class="btn-group w-100 mb-1" role="group">
+                                    <button id="exportBtn" class="btn btn-info btn-sm dropdown-toggle"
+                                            data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-download"></i> Xuất file
+                                    </button>
+                                    <ul class="dropdown-menu" style="font-size: 12px;">
+                                        <li>
+                                            <a class="dropdown-item" href="#" onclick="exportAsImage(); return false;">
+                                                <i class="bi bi-file-image"></i> Xuất ảnh PNG
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#" onclick="exportAsJSON(); return false;">
+                                                <i class="bi bi-file-code"></i> Xuất JSON
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#" onclick="exportAsSVG(); return false;">
+                                                <i class="bi bi-file-earmark-code"></i> Xuất SVG
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item" href="#" onclick="importFromJSON(); return false;">
+                                                <i class="bi bi-upload"></i> Nhập từ JSON
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <!-- Hidden file input for JSON import -->
+                                <input type="file" id="jsonImportInput" accept=".json" style="display: none;">
                             </div>
                         </div>
                     </div>

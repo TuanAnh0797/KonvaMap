@@ -45,6 +45,8 @@ namespace MapDrawingApp.Controllers
                         name = m.Name,
                         description = m.Description,
                         thumbnailUrl = m.ThumbnailUrl,
+                        canvasWidth = m.CanvasWidth,
+                        canvasHeight = m.CanvasHeight,
                         createdAt = m.CreatedAt,
                         updatedAt = m.UpdatedAt,
                         objectCount = _context.MapObjects.Count(o => o.MapId == m.Id)
@@ -422,6 +424,90 @@ namespace MapDrawingApp.Controllers
             }
         }
 
+        // ============= CANVAS SIZE MANAGEMENT =============
+
+        [HttpPost]
+        public IActionResult UpdateCanvasSize([FromBody] UpdateCanvasSizeRequest request)
+        {
+            try
+            {
+                _logger.LogInformation($"UpdateCanvasSize called: MapId={request?.MapId}, Size={request?.Width}x{request?.Height}");
+
+                if (request == null || request.MapId <= 0)
+                {
+                    return Json(new { success = false, message = "MapId không hợp lệ" });
+                }
+
+                if (request.Width < 400 || request.Width > 10000)
+                {
+                    return Json(new { success = false, message = "Width phải từ 400-10000" });
+                }
+
+                if (request.Height < 300 || request.Height > 10000)
+                {
+                    return Json(new { success = false, message = "Height phải từ 300-10000" });
+                }
+
+                var map = _context.Maps.Find(request.MapId);
+                if (map == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy map" });
+                }
+
+                // Update canvas size
+                map.CanvasWidth = request.Width;
+                map.CanvasHeight = request.Height;
+                map.UpdatedAt = DateTime.Now;
+
+                _context.SaveChanges();
+
+                _logger.LogInformation($"✓ Canvas size updated: Map {request.MapId} → {request.Width}x{request.Height}");
+
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UpdateCanvasSize Error");
+                return Json(new
+                {
+                    success = false,
+                    message = $"Lỗi: {ex.InnerException?.Message ?? ex.Message}"
+                });
+            }
+        }
+
+        [HttpGet]
+        public IActionResult GetCanvasSize(int mapId)
+        {
+            try
+            {
+                _logger.LogInformation($"GetCanvasSize called: MapId={mapId}");
+
+                if (mapId <= 0)
+                {
+                    return Json(new { success = false, message = "MapId không hợp lệ" });
+                }
+
+                var map = _context.Maps.Find(mapId);
+                if (map == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy map" });
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    width = map.CanvasWidth,
+                    height = map.CanvasHeight
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetCanvasSize Error");
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
         // ============= REQUEST CLASSES =============
 
         public class MapCreateRequest
@@ -452,83 +538,6 @@ namespace MapDrawingApp.Controllers
             public string Data { get; set; }
             public string ImageUrl { get; set; }
         }
-        // ADD THESE METHODS TO MapController.cs
-
-        // ============= CANVAS SIZE MANAGEMENT =============
-
-        [HttpPost]
-        public IActionResult UpdateCanvasSize([FromBody] UpdateCanvasSizeRequest request)
-        {
-            try
-            {
-                _logger.LogInformation($"UpdateCanvasSize called: MapId={request?.MapId}, Size={request?.Width}x{request?.Height}");
-
-                if (request == null || request.MapId <= 0)
-                {
-                    return Json(new { success = false, message = "Request không hợp lệ" });
-                }
-
-                if (request.Width < 400 || request.Height < 300)
-                {
-                    return Json(new { success = false, message = "Kích thước tối thiểu: 400x300" });
-                }
-
-                if (request.Width > 10000 || request.Height > 10000)
-                {
-                    return Json(new { success = false, message = "Kích thước tối đa: 10000x10000" });
-                }
-
-                var map = _context.Maps.Find(request.MapId);
-                if (map == null)
-                {
-                    return Json(new { success = false, message = "Không tìm thấy map" });
-                }
-
-                map.CanvasWidth = request.Width;
-                map.CanvasHeight = request.Height;
-                map.UpdatedAt = DateTime.Now;
-
-                _context.SaveChanges();
-
-                _logger.LogInformation($"✓ Canvas size updated: {request.Width}x{request.Height}");
-
-                return Json(new { success = true });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "UpdateCanvasSize Error");
-                return Json(new { success = false, message = ex.Message });
-            }
-        }
-
-        [HttpGet]
-        public IActionResult GetCanvasSize(int mapId)
-        {
-            try
-            {
-                _logger.LogInformation($"GetCanvasSize called: MapId={mapId}");
-
-                var map = _context.Maps.Find(mapId);
-                if (map == null)
-                {
-                    return Json(new { success = false, message = "Không tìm thấy map" });
-                }
-
-                return Json(new
-                {
-                    success = true,
-                    width = map.CanvasWidth,
-                    height = map.CanvasHeight
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "GetCanvasSize Error");
-                return Json(new { success = false, message = ex.Message });
-            }
-        }
-
-        // ============= REQUEST CLASS - ADD TO EXISTING CLASSES =============
 
         public class UpdateCanvasSizeRequest
         {

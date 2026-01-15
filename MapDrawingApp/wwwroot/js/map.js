@@ -40,6 +40,7 @@ $(document).ready(function () {
 
     initializeMapSystem();
     setupEventHandlers();
+    setupAdvancedPropertyHandlers();
     setupKeyboardControls();
 
     updateStatus('Sẵn sàng - Không thể vẽ/kéo ra ngoài canvas');
@@ -467,6 +468,22 @@ function setupEventHandlers() {
 
     $('#canvasSizeWidth, #canvasSizeHeight').on('input', function () {
         updateCanvasSizePreview();
+
+        // ✅ Update highlights when user manually changes values
+        const currentWidth = parseInt($('#canvasSizeWidth').val());
+        const currentHeight = parseInt($('#canvasSizeHeight').val());
+
+        // Temporarily update canvasWidth/Height for highlight check
+        const savedW = canvasWidth;
+        const savedH = canvasHeight;
+        canvasWidth = currentWidth;
+        canvasHeight = currentHeight;
+
+        highlightMatchingPreset();
+
+        // Restore original values (will be updated when user clicks Apply)
+        canvasWidth = savedW;
+        canvasHeight = savedH;
     });
 
     console.log('✓ Event handlers set up');
@@ -1012,23 +1029,133 @@ function clearAll() {
 
 function updatePropertyPanel(shape) {
     if (!shape) {
-        $('#colorPicker').val('#000000');
-        $('#fillColorPicker').val('#ffffff');
-        $('#strokeWidth').val(2);
-        $('#opacity').val(1);
+        // Reset all fields
+        $('#colorPicker').val('#000000').prop('disabled', true);
+        $('#fillColorPicker').val('#ffffff').prop('disabled', true);
+        $('#strokeWidth').val(2).prop('disabled', true);
+        $('#opacity').val(1).prop('disabled', true);
         $('#strokeWidthValue').text('2');
         $('#opacityValue').text('100%');
-        $('#selectedObjectInfo').text('Chưa chọn');
+        $('#selectedObjectInfo').html('<i class="bi bi-info-circle"></i> Chưa chọn');
+
+        // ✅ NEW: Reset position, size, rotation
+        $('#positionX').val(0).prop('disabled', true);
+        $('#positionY').val(0).prop('disabled', true);
+        $('#objectWidth').val(0).prop('disabled', true);
+        $('#objectHeight').val(0).prop('disabled', true);
+        $('#rotation').val(0).prop('disabled', true);
+        $('#rotationValue').text('0°');
+
+        // ✅ NEW: Reset lock button
+        $('#lockToggleBtn').prop('disabled', true);
+
+        // ✅ NEW: Reset advanced properties
+        $('#scaleX').val(1).prop('disabled', true);
+        $('#scaleY').val(1).prop('disabled', true);
+        $('#skewX').val(0).prop('disabled', true);
+        $('#skewY').val(0).prop('disabled', true);
+        $('#scaleXValue').text('1.0');
+        $('#scaleYValue').text('1.0');
+        $('#skewXValue').text('0');
+        $('#skewYValue').text('0');
+        $('#bringToFrontBtn').prop('disabled', true);
+        $('#sendToBackBtn').prop('disabled', true);
+
         return;
     }
 
-    $('#colorPicker').val(shape.stroke() || '#000000');
-    $('#fillColorPicker').val(shape.fill() === 'transparent' ? '#ffffff' : shape.fill() || '#ffffff');
-    $('#strokeWidth').val(shape.strokeWidth() || 2);
-    $('#opacity').val(shape.opacity() || 1);
-    $('#strokeWidthValue').text(shape.strokeWidth() || 2);
-    $('#opacityValue').text(Math.round((shape.opacity() || 1) * 100) + '%');
-    $('#selectedObjectInfo').text(`${shape.getClassName()} (ID: ${shape.getAttr('dbId') || 'new'})`);
+    // Basic properties
+    const stroke = shape.stroke() || '#000000';
+    const fill = shape.fill() || 'transparent';
+    const strokeWidth = shape.strokeWidth() || 2;
+    const opacity = shape.opacity() || 1;
+
+    $('#colorPicker').val(stroke).prop('disabled', false);
+    $('#fillColorPicker').val(fill === 'transparent' ? '#ffffff' : fill).prop('disabled', false);
+    $('#strokeWidth').val(strokeWidth).prop('disabled', false);
+    $('#opacity').val(opacity).prop('disabled', false);
+    $('#strokeWidthValue').text(strokeWidth);
+    $('#opacityValue').text(Math.round(opacity * 100) + '%');
+
+    const info = `${shape.getClassName()} (ID: ${shape.getAttr('dbId') || 'new'})`;
+    $('#selectedObjectInfo').html(`<i class="bi bi-check-circle"></i> ${info}`);
+
+    // ✅ NEW: Position (X, Y)
+    const x = Math.round(shape.x());
+    const y = Math.round(shape.y());
+    $('#positionX').val(x).prop('disabled', false);
+    $('#positionY').val(y).prop('disabled', false);
+
+    // ✅ NEW: Size (Width, Height) - depends on shape type
+    const className = shape.getClassName();
+    if (className === 'Rect') {
+        const width = Math.round(shape.width() * (shape.scaleX() || 1));
+        const height = Math.round(shape.height() * (shape.scaleY() || 1));
+        $('#objectWidth').val(width).prop('disabled', false);
+        $('#objectHeight').val(height).prop('disabled', false);
+        $('#sizeSection').show();
+    } else if (className === 'Circle') {
+        const radius = Math.round(shape.radius());
+        $('#objectWidth').val(radius).prop('disabled', false);
+        $('#objectHeight').val(radius).prop('disabled', false);
+        $('#sizeSection').show();
+        // Change labels for circle
+        $('#sizeSection label').first().text('R:');
+        $('#sizeSection .col-6').last().hide();
+    } else if (className === 'Ellipse') {
+        const rx = Math.round(shape.radiusX());
+        const ry = Math.round(shape.radiusY());
+        $('#objectWidth').val(rx).prop('disabled', false);
+        $('#objectHeight').val(ry).prop('disabled', false);
+        $('#sizeSection').show();
+        // Change labels for ellipse
+        $('#sizeSection label').first().text('RX:');
+        $('#sizeSection label').last().text('RY:');
+    } else {
+        // For Line, Arrow, Text, etc - hide size section
+        $('#sizeSection').hide();
+    }
+
+    // ✅ NEW: Rotation
+    const rotation = Math.round(shape.rotation() || 0);
+    $('#rotation').val(rotation).prop('disabled', false);
+    $('#rotationValue').text(rotation + '°');
+
+    // ✅ NEW: Lock/Unlock status
+    const isLocked = !shape.draggable();
+    $('#lockToggleBtn').prop('disabled', false);
+    if (isLocked) {
+        $('#lockToggleBtn')
+            .removeClass('btn-outline-warning')
+            .addClass('btn-warning');
+        $('#lockToggleBtn i').removeClass('bi-unlock').addClass('bi-lock');
+        $('#lockToggleText').text('Mở khóa');
+    } else {
+        $('#lockToggleBtn')
+            .removeClass('btn-warning')
+            .addClass('btn-outline-warning');
+        $('#lockToggleBtn i').removeClass('bi-lock').addClass('bi-unlock');
+        $('#lockToggleText').text('Khóa di chuyển');
+    }
+
+    // ✅ NEW: Advanced properties
+    const scaleX = shape.scaleX() || 1;
+    const scaleY = shape.scaleY() || 1;
+    const skewX = shape.skewX() || 0;
+    const skewY = shape.skewY() || 0;
+
+    $('#scaleX').val(scaleX).prop('disabled', false);
+    $('#scaleY').val(scaleY).prop('disabled', false);
+    $('#skewX').val(skewX).prop('disabled', false);
+    $('#skewY').val(skewY).prop('disabled', false);
+
+    $('#scaleXValue').text(scaleX.toFixed(1));
+    $('#scaleYValue').text(scaleY.toFixed(1));
+    $('#skewXValue').text(skewX.toFixed(1));
+    $('#skewYValue').text(skewY.toFixed(1));
+
+    $('#bringToFrontBtn').prop('disabled', false);
+    $('#sendToBackBtn').prop('disabled', false);
 }
 
 function applyColorToSelected(color) {
@@ -1590,11 +1717,50 @@ function zoomFit() {
 // ============= CANVAS SIZE SETTINGS =============
 
 function showCanvasSizeSettings() {
+    // Set current values
     $('#canvasSizeWidth').val(canvasWidth);
     $('#canvasSizeHeight').val(canvasHeight);
+
+    // Update preview
     updateCanvasSizePreview();
+
+    // ✅ Highlight matching preset button
+    highlightMatchingPreset();
+
     const modal = new bootstrap.Modal(document.getElementById('canvasSizeModal'));
     modal.show();
+}
+
+function highlightMatchingPreset() {
+    // Remove all highlights
+    $('#canvasSizeModal .btn-outline-secondary, #canvasSizeModal .btn-outline-primary')
+        .removeClass('btn-primary btn-outline-primary')
+        .addClass('btn-outline-secondary');
+
+    // Define presets
+    const presets = [
+        { w: 800, h: 600, selector: '[onclick*="800, 600"]' },
+        { w: 1200, h: 800, selector: '[onclick*="1200, 800"]' },
+        { w: 1920, h: 1080, selector: '[onclick*="1920, 1080"]' },
+        { w: 1080, h: 1920, selector: '[onclick*="1080, 1920"]' },
+        { w: 1000, h: 1000, selector: '[onclick*="1000, 1000"]' },
+        { w: 794, h: 1123, selector: '[onclick*="794, 1123"]' },
+        { w: 1123, h: 794, selector: '[onclick*="1123, 794"]' },
+        { w: 2560, h: 1080, selector: '[onclick*="2560, 1080"]' },
+        { w: 3840, h: 2160, selector: '[onclick*="3840, 2160"]' }
+    ];
+
+    // Find matching preset
+    const matching = presets.find(p => p.w === canvasWidth && p.h === canvasHeight);
+
+    if (matching) {
+        $(matching.selector)
+            .removeClass('btn-outline-secondary')
+            .addClass('btn-primary');
+        console.log('✓ Highlighted preset:', canvasWidth, 'x', canvasHeight);
+    } else {
+        console.log('→ Custom size:', canvasWidth, 'x', canvasHeight);
+    }
 }
 
 function updateCanvasSizePreview() {
@@ -1611,6 +1777,9 @@ function setCanvasPreset(width, height) {
     $('#canvasSizeWidth').val(width);
     $('#canvasSizeHeight').val(height);
     updateCanvasSizePreview();
+
+    // ✅ Update button highlights
+    highlightMatchingPreset();
 }
 
 function applyCanvasSize() {
@@ -1658,4 +1827,527 @@ function updateStatus(message, type = 'info') {
     }
 }
 
-console.log('✓ map.js v5 WITH CANVAS BOUNDARIES + POLYGON LOADED');
+// ✅ NEW: Apply position changes
+function applyPositionToSelected(x, y) {
+    if (!selectedShape) return;
+
+    // Constrain to canvas
+    x = Math.max(0, Math.min(canvasWidth, x));
+    y = Math.max(0, Math.min(canvasHeight, y));
+
+    selectedShape.position({ x, y });
+    layer.batchDraw();
+    updateObject(selectedShape);
+    console.log('→ Position updated:', x, y);
+}
+
+// ✅ NEW: Apply size changes
+function applySizeToSelected(width, height) {
+    if (!selectedShape) return;
+
+    const className = selectedShape.getClassName();
+
+    if (className === 'Rect') {
+        selectedShape.width(width);
+        selectedShape.height(height);
+    } else if (className === 'Circle') {
+        selectedShape.radius(width);
+    } else if (className === 'Ellipse') {
+        selectedShape.radiusX(width);
+        selectedShape.radiusY(height);
+    }
+
+    layer.batchDraw();
+    updateObject(selectedShape);
+    console.log('→ Size updated:', width, height);
+}
+
+// ✅ NEW: Apply rotation
+function applyRotationToSelected(rotation) {
+    if (!selectedShape) return;
+    selectedShape.rotation(rotation);
+    layer.batchDraw();
+    updateObject(selectedShape);
+    $('#rotationValue').text(rotation + '°');
+}
+
+// ✅ NEW: Toggle lock/unlock
+function toggleLockShape() {
+    if (!selectedShape) return;
+
+    const isLocked = !selectedShape.draggable();
+    selectedShape.draggable(isLocked);
+
+    if (isLocked) {
+        // Unlocking
+        $('#lockToggleBtn')
+            .removeClass('btn-warning')
+            .addClass('btn-outline-warning');
+        $('#lockToggleBtn i').removeClass('bi-lock').addClass('bi-unlock');
+        $('#lockToggleText').text('Khóa di chuyển');
+        updateStatus('Đã mở khóa - Có thể di chuyển');
+    } else {
+        // Locking
+        $('#lockToggleBtn')
+            .removeClass('btn-outline-warning')
+            .addClass('btn-warning');
+        $('#lockToggleBtn i').removeClass('bi-unlock').addClass('bi-lock');
+        $('#lockToggleText').text('Mở khóa');
+        updateStatus('Đã khóa - Không thể di chuyển');
+    }
+
+    updateObject(selectedShape);
+}
+
+// ✅ NEW: Apply scale
+function applyScaleToSelected(scaleX, scaleY) {
+    if (!selectedShape) return;
+    selectedShape.scaleX(scaleX);
+    selectedShape.scaleY(scaleY);
+    layer.batchDraw();
+    updateObject(selectedShape);
+    $('#scaleXValue').text(scaleX.toFixed(1));
+    $('#scaleYValue').text(scaleY.toFixed(1));
+}
+
+// ✅ NEW: Apply skew
+function applySkewToSelected(skewX, skewY) {
+    if (!selectedShape) return;
+    selectedShape.skewX(skewX);
+    selectedShape.skewY(skewY);
+    layer.batchDraw();
+    updateObject(selectedShape);
+    $('#skewXValue').text(skewX.toFixed(1));
+    $('#skewYValue').text(skewY.toFixed(1));
+}
+
+// ✅ NEW: Bring to front
+function bringSelectedToFront() {
+    if (!selectedShape) return;
+    selectedShape.moveToTop();
+    transformer.moveToTop();
+    layer.batchDraw();
+    updateObject(selectedShape);
+    updateStatus('Đã đưa lên trên');
+}
+
+// ✅ NEW: Send to back
+function sendSelectedToBack() {
+    if (!selectedShape) return;
+    selectedShape.moveToBottom();
+    // Keep background at bottom
+    if (canvasBackground) {
+        canvasBackground.moveToBottom();
+    }
+    layer.batchDraw();
+    updateObject(selectedShape);
+    updateStatus('Đã đưa xuống dưới');
+}
+
+// ============= EVENT HANDLERS FOR NEW PROPERTIES =============
+
+function setupAdvancedPropertyHandlers() {
+    // Position X, Y
+    $('#positionX').on('change', function () {
+        const x = parseInt($(this).val());
+        const y = parseInt($('#positionY').val());
+        applyPositionToSelected(x, y);
+    });
+
+    $('#positionY').on('change', function () {
+        const x = parseInt($('#positionX').val());
+        const y = parseInt($(this).val());
+        applyPositionToSelected(x, y);
+    });
+
+    // Size Width, Height
+    $('#objectWidth').on('change', function () {
+        const w = parseInt($(this).val());
+        const h = parseInt($('#objectHeight').val());
+        applySizeToSelected(w, h);
+    });
+
+    $('#objectHeight').on('change', function () {
+        const w = parseInt($('#objectWidth').val());
+        const h = parseInt($(this).val());
+        applySizeToSelected(w, h);
+    });
+
+    // Rotation
+    $('#rotation').on('input change', function () {
+        const rotation = parseInt($(this).val());
+        applyRotationToSelected(rotation);
+    });
+
+    // Lock/Unlock
+    $('#lockToggleBtn').on('click', function () {
+        toggleLockShape();
+    });
+
+    // Scale X, Y
+    $('#scaleX').on('input change', function () {
+        const scaleX = parseFloat($(this).val());
+        const scaleY = parseFloat($('#scaleY').val());
+        applyScaleToSelected(scaleX, scaleY);
+    });
+
+    $('#scaleY').on('input change', function () {
+        const scaleX = parseFloat($('#scaleX').val());
+        const scaleY = parseFloat($(this).val());
+        applyScaleToSelected(scaleX, scaleY);
+    });
+
+    // Skew X, Y
+    $('#skewX').on('input change', function () {
+        const skewX = parseFloat($(this).val());
+        const skewY = parseFloat($('#skewY').val());
+        applySkewToSelected(skewX, skewY);
+    });
+
+    $('#skewY').on('input change', function () {
+        const skewX = parseFloat($('#skewX').val());
+        const skewY = parseFloat($(this).val());
+        applySkewToSelected(skewX, skewY);
+    });
+
+    // Bring to front / Send to back
+    $('#bringToFrontBtn').on('click', function () {
+        bringSelectedToFront();
+    });
+
+    $('#sendToBackBtn').on('click', function () {
+        sendSelectedToBack();
+    });
+
+    console.log('✓ Advanced property handlers set up');
+}
+
+// ✅ Export as PNG Image
+function exportAsImage() {
+    if (!stage || !layer) {
+        alert('Không có canvas để xuất!');
+        return;
+    }
+
+    try {
+        // Deselect any selected shape (hide transformer)
+        if (transformer) {
+            transformer.nodes([]);
+            layer.batchDraw();
+        }
+
+        // Get canvas bounds
+        const padding = 20; // Add some padding
+        const bbox = {
+            x: 0,
+            y: 0,
+            width: canvasWidth,
+            height: canvasHeight
+        };
+
+        // Export with high quality
+        const dataURL = stage.toDataURL({
+            x: bbox.x,
+            y: bbox.y,
+            width: bbox.width,
+            height: bbox.height,
+            pixelRatio: 2  // 2x resolution for better quality
+        });
+
+        // Get map name for filename
+        const mapName = $('#currentMapName').text() || 'map';
+        const filename = `${mapName.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.png`;
+
+        // Download
+        downloadFile(dataURL, filename);
+
+        updateStatus('Đã xuất ảnh PNG: ' + filename);
+        console.log('✓ Exported as image:', filename);
+
+    } catch (error) {
+        console.error('Export image error:', error);
+        alert('Lỗi khi xuất ảnh: ' + error.message);
+    }
+}
+
+// ✅ Export as JSON
+function exportAsJSON() {
+    if (!stage || !layer) {
+        alert('Không có canvas để xuất!');
+        return;
+    }
+
+    try {
+        // Deselect
+        if (transformer) {
+            transformer.nodes([]);
+        }
+
+        // Get all objects (exclude transformer and background)
+        const objects = [];
+        layer.children.forEach(child => {
+            if (child === transformer) return;
+            if (child === canvasBackground) return;
+
+            const obj = child.toObject();
+
+            // Add additional metadata
+            obj._type = child.getClassName();
+            obj._dbId = child.getAttr('dbId');
+
+            // For images, save the URL
+            if (obj._type === 'Image') {
+                obj._imageUrl = child.getAttr('uploadedUrl') || child.getAttr('librarySource');
+            }
+
+            objects.push(obj);
+        });
+
+        // Create export data
+        const exportData = {
+            version: '1.0',
+            exportDate: new Date().toISOString(),
+            mapId: currentMapId,
+            mapName: $('#currentMapName').text() || 'Untitled',
+            canvasWidth: canvasWidth,
+            canvasHeight: canvasHeight,
+            objectCount: objects.length,
+            objects: objects
+        };
+
+        // Convert to JSON string
+        const jsonString = JSON.stringify(exportData, null, 2);
+
+        // Create blob and download
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const mapName = exportData.mapName.replace(/[^a-z0-9]/gi, '_');
+        const filename = `${mapName}_${Date.now()}.json`;
+
+        downloadFile(url, filename);
+        URL.revokeObjectURL(url);
+
+        updateStatus('Đã xuất JSON: ' + filename);
+        console.log('✓ Exported as JSON:', filename, 'Objects:', objects.length);
+
+    } catch (error) {
+        console.error('Export JSON error:', error);
+        alert('Lỗi khi xuất JSON: ' + error.message);
+    }
+}
+
+// ✅ Export as SVG
+function exportAsSVG() {
+    if (!stage || !layer) {
+        alert('Không có canvas để xuất!');
+        return;
+    }
+
+    try {
+        // Deselect
+        if (transformer) {
+            transformer.nodes([]);
+            layer.batchDraw();
+        }
+
+        // Create SVG string
+        let svg = `<svg width="${canvasWidth}" height="${canvasHeight}" xmlns="http://www.w3.org/2000/svg">`;
+
+        // Add white background
+        svg += `<rect width="${canvasWidth}" height="${canvasHeight}" fill="white"/>`;
+
+        // Add each shape
+        layer.children.forEach(child => {
+            if (child === transformer) return;
+            if (child === canvasBackground) return;
+
+            const className = child.getClassName();
+            const x = child.x();
+            const y = child.y();
+            const stroke = child.stroke() || 'none';
+            const fill = child.fill() || 'none';
+            const strokeWidth = child.strokeWidth() || 1;
+            const opacity = child.opacity() || 1;
+
+            if (className === 'Rect') {
+                const width = child.width();
+                const height = child.height();
+                svg += `<rect x="${x}" y="${y}" width="${width}" height="${height}" `;
+                svg += `stroke="${stroke}" fill="${fill}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
+            } else if (className === 'Circle') {
+                const radius = child.radius();
+                svg += `<circle cx="${x}" cy="${y}" r="${radius}" `;
+                svg += `stroke="${stroke}" fill="${fill}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
+            } else if (className === 'Ellipse') {
+                const rx = child.radiusX();
+                const ry = child.radiusY();
+                svg += `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" `;
+                svg += `stroke="${stroke}" fill="${fill}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
+            } else if (className === 'Line') {
+                const points = child.points();
+                svg += `<line x1="${points[0]}" y1="${points[1]}" x2="${points[2]}" y2="${points[3]}" `;
+                svg += `stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"/>`;
+            } else if (className === 'Text') {
+                const text = child.text();
+                const fontSize = child.fontSize();
+                const fontFamily = child.fontFamily();
+                svg += `<text x="${x}" y="${y}" font-size="${fontSize}" font-family="${fontFamily}" `;
+                svg += `fill="${fill}" opacity="${opacity}">${text}</text>`;
+            }
+            // Add more shape types as needed
+        });
+
+        svg += '</svg>';
+
+        // Create blob and download
+        const blob = new Blob([svg], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+
+        const mapName = ($('#currentMapName').text() || 'map').replace(/[^a-z0-9]/gi, '_');
+        const filename = `${mapName}_${Date.now()}.svg`;
+
+        downloadFile(url, filename);
+        URL.revokeObjectURL(url);
+
+        updateStatus('Đã xuất SVG: ' + filename);
+        console.log('✓ Exported as SVG:', filename);
+
+    } catch (error) {
+        console.error('Export SVG error:', error);
+        alert('Lỗi khi xuất SVG: ' + error.message);
+    }
+}
+
+// ✅ Import from JSON
+function importFromJSON() {
+    $('#jsonImportInput').click();
+}
+
+// Handle JSON file import
+$('#jsonImportInput').on('change', function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function (event) {
+        try {
+            const jsonData = JSON.parse(event.target.result);
+
+            console.log('→ Importing JSON:', jsonData);
+
+            // Validate
+            if (!jsonData.objects || !Array.isArray(jsonData.objects)) {
+                alert('File JSON không hợp lệ!');
+                return;
+            }
+
+            // Confirm
+            const msg = `Nhập ${jsonData.objectCount} đối tượng từ file?\n\n` +
+                `Map: ${jsonData.mapName}\n` +
+                `Canvas: ${jsonData.canvasWidth}x${jsonData.canvasHeight}\n\n` +
+                `Lưu ý: Các đối tượng hiện tại sẽ KHÔNG bị xóa.`;
+
+            if (!confirm(msg)) return;
+
+            // Import objects
+            let importedCount = 0;
+
+            jsonData.objects.forEach(objData => {
+                try {
+                    let shape;
+                    const type = objData._type;
+
+                    if (type === 'Rect') {
+                        shape = new Konva.Rect(objData);
+                    } else if (type === 'Circle') {
+                        shape = new Konva.Circle(objData);
+                    } else if (type === 'Ellipse') {
+                        shape = new Konva.Ellipse(objData);
+                    } else if (type === 'Line') {
+                        shape = new Konva.Line(objData);
+                    } else if (type === 'Arrow') {
+                        shape = new Konva.Arrow(objData);
+                    } else if (type === 'Star') {
+                        shape = new Konva.Star(objData);
+                    } else if (type === 'Text') {
+                        shape = new Konva.Text(objData);
+                    } else if (type === 'Image' && objData._imageUrl) {
+                        // Load image
+                        const imageObj = new Image();
+                        imageObj.onload = function () {
+                            const img = new Konva.Image({
+                                ...objData,
+                                image: imageObj
+                            });
+                            img.setAttr('uploadedUrl', objData._imageUrl);
+                            img.draggable(true);
+                            setupDragBoundaries(img);
+                            setupShapeEvents(img);
+                            layer.add(img);
+                            layer.batchDraw();
+
+                            // Save to DB
+                            saveObject(img, 'image');
+                        };
+                        imageObj.src = objData._imageUrl;
+                        return; // Skip adding shape now
+                    }
+
+                    if (shape) {
+                        shape.draggable(true);
+                        setupDragBoundaries(shape);
+                        setupShapeEvents(shape);
+                        layer.add(shape);
+
+                        // Save to DB
+                        saveObject(shape, type.toLowerCase());
+
+                        importedCount++;
+                    }
+
+                } catch (err) {
+                    console.error('Error importing object:', err);
+                }
+            });
+
+            layer.batchDraw();
+
+            updateStatus(`Đã nhập ${importedCount} đối tượng`);
+            alert(`Nhập thành công ${importedCount}/${jsonData.objectCount} đối tượng!`);
+
+            console.log('✓ Import complete:', importedCount, 'objects');
+
+        } catch (error) {
+            console.error('Import error:', error);
+            alert('Lỗi khi đọc file JSON: ' + error.message);
+        }
+    };
+
+    reader.readAsText(file);
+
+    // Reset input
+    $(this).val('');
+});
+
+// ✅ Helper: Download file
+function downloadFile(dataUrl, filename) {
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// ============= UPDATE EVENT HANDLERS =============
+
+// Replace the old loadBtn handler with export menu
+// Comment out or remove:
+// $('#loadBtn').on('click', function() {
+//     loadAllObjects();
+// });
+
+console.log('✓ Export/Import functions loaded');
+
