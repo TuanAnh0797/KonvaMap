@@ -1,0 +1,580 @@
+@{
+    ViewData["Title"] = ViewBag.MapName ?? "Xem bản đồ";
+    var mapId = ViewBag.MapId;
+    var mapName = ViewBag.MapName ?? "Bản đồ";
+    var mapDescription = ViewBag.MapDescription ?? "";
+    var canvasWidth = ViewBag.CanvasWidth ?? 1200;
+    var canvasHeight = ViewBag.CanvasHeight ?? 800;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/map.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+
+        .view-mode-header {
+            background: white;
+            border-bottom: 2px solid #e0e0e0;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 1000;
+        }
+
+        .view-mode-header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .view-mode-header-title {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .view-mode-header-title h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .view-mode-header-title p {
+            margin: 0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .view-mode-badge {
+            background: #17a2b8;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .view-mode-header-right {
+            display: flex;
+            gap: 10px;
+        }
+
+        .back-btn, .edit-btn, .zoom-info {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        .back-btn:hover {
+            background: #5a6268;
+        }
+
+        .edit-btn {
+            background: #0d6efd;
+            color: white;
+        }
+
+        .edit-btn:hover {
+            background: #0b5ed7;
+        }
+
+        .zoom-info {
+            background: #f8f9fa;
+            color: #333;
+            cursor: default;
+            font-size: 14px;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: calc(100vh - 80px);
+            background: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #container {
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            border-width: 0.3rem;
+        }
+
+        .zoom-controls-view {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .zoom-controls-view .btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+
+        .zoom-display-view {
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            padding: 5px 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            min-width: 70px;
+        }
+
+        .watermark {
+            position: fixed;
+            bottom: 70px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 999;
+            font-size: 12px;
+            color: #666;
+            max-width: 300px;
+        }
+
+        .watermark strong {
+            color: #333;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .cursor-grab {
+            cursor: grab !important;
+        }
+
+        .cursor-grabbing {
+            cursor: grabbing !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="view-mode-header">
+        <div class="view-mode-header-left">
+            <div class="view-mode-header-title">
+                <h1>
+                    <i class="bi bi-eye"></i>
+                    @mapName
+                </h1>
+                @if (!string.IsNullOrEmpty(mapDescription))
+                {
+                    <p>@mapDescription</p>
+                }
+            </div>
+            <div class="view-mode-badge">
+                <i class="bi bi-lock"></i>
+                CHẾ ĐỘ XEM
+            </div>
+        </div>
+        <div class="view-mode-header-right">
+            <div class="zoom-info">
+                <i class="bi bi-aspect-ratio"></i>
+                <span id="canvasSizeInfo">@canvasWidth × @canvasHeight px</span>
+            </div>
+            <button class="edit-btn" onclick="editMap()">
+                <i class="bi bi-pencil"></i>
+                Chỉnh sửa
+            </button>
+            <button class="back-btn" onclick="goBack()">
+                <i class="bi bi-arrow-left"></i>
+                Quay lại
+            </button>
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <div id="container"></div>
+        
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Đang tải...</span>
+            </div>
+            <p class="mt-3">Đang tải bản đồ...</p>
+        </div>
+    </div>
+
+    <div class="watermark">
+        <strong><i class="bi bi-info-circle"></i> Chế độ xem (Read-only)</strong>
+        Bạn đang xem bản đồ ở chế độ chỉ đọc. Không thể chỉnh sửa hoặc thêm đối tượng.
+        <br><br>
+        <strong>Điều khiển:</strong><br>
+        • Kéo để di chuyển canvas<br>
+        • Scroll để zoom in/out<br>
+        • Click "Chỉnh sửa" để vào chế độ edit
+    </div>
+
+    <div class="zoom-controls-view">
+        <div class="zoom-display-view">
+            <i class="bi bi-zoom-in"></i>
+            <span id="zoomPercentage">100%</span>
+        </div>
+
+        <button class="btn btn-sm btn-light" onclick="zoomIn()" title="Phóng to">
+            <i class="bi bi-plus-lg"></i>
+        </button>
+
+        <button class="btn btn-sm btn-light" onclick="zoomOut()" title="Thu nhỏ">
+            <i class="bi bi-dash-lg"></i>
+        </button>
+
+        <button class="btn btn-sm btn-light" onclick="zoomReset()" title="100%">
+            <i class="bi bi-arrow-clockwise"></i>
+        </button>
+
+        <button class="btn btn-sm btn-light" onclick="zoomFit()" title="Vừa khung">
+            <i class="bi bi-arrows-angle-contract"></i>
+        </button>
+    </div>
+
+    <script src="~/lib/konva/konva.min.js"></script>
+    <script src="~/lib/jquery/jquery.min.js"></script>
+
+    <script>
+        // Map data from server
+        const mapId = @mapId;
+        const canvasWidth = @canvasWidth;
+        const canvasHeight = @canvasHeight;
+
+        // Canvas variables
+        let stage, layer;
+        let canvasScale = 1;
+        let canvasPosition = { x: 0, y: 0 };
+        let isPanning = false;
+        let lastPointerPosition = null;
+
+        $(document).ready(function() {
+            console.log('=== MAP VIEWER ===');
+            console.log('Map ID:', mapId);
+            console.log('Canvas:', canvasWidth, 'x', canvasHeight);
+
+            initializeCanvas();
+            enablePan();
+            enableZoom();
+            loadMapObjects();
+        });
+
+        function initializeCanvas() {
+            const container = document.getElementById('container');
+
+            stage = new Konva.Stage({
+                container: 'container',
+                width: container.offsetWidth,
+                height: container.offsetHeight
+            });
+
+            layer = new Konva.Layer();
+
+            // Canvas background
+            const background = new Konva.Rect({
+                x: 0,
+                y: 0,
+                width: canvasWidth,
+                height: canvasHeight,
+                fill: 'white',
+                stroke: '#e0e0e0',
+                strokeWidth: 1,
+                listening: false
+            });
+            layer.add(background);
+
+            stage.add(layer);
+
+            centerCanvas();
+            updateZoomDisplay();
+
+            console.log('✓ Canvas initialized (view-only)');
+        }
+
+        function loadMapObjects() {
+            console.log('→ Loading objects for map:', mapId);
+
+            $.ajax({
+                url: '/MapView/GetMapObjects',
+                type: 'GET',
+                data: { mapId: mapId },
+                success: function(response) {
+                    if (response.success && response.objects) {
+                        console.log('→ Found', response.objects.length, 'objects');
+                        
+                        response.objects.forEach(obj => {
+                            loadShape(obj);
+                        });
+
+                        layer.batchDraw();
+                        
+                        $('#loadingOverlay').fadeOut();
+                        
+                        console.log('✓ Map loaded successfully');
+                    } else {
+                        showError('Không thể tải objects');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading objects:', error);
+                    showError('Lỗi khi tải objects: ' + error);
+                }
+            });
+        }
+
+        function loadShape(obj) {
+            try {
+                if (!obj.data) return false;
+
+                const shapeData = JSON.parse(obj.data);
+                let shape;
+
+                if (obj.type === 'rect') {
+                    shape = new Konva.Rect(shapeData);
+                } else if (obj.type === 'circle') {
+                    shape = new Konva.Circle(shapeData);
+                } else if (obj.type === 'ellipse') {
+                    shape = new Konva.Ellipse(shapeData);
+                } else if (obj.type === 'line') {
+                    shape = new Konva.Line(shapeData);
+                } else if (obj.type === 'arrow') {
+                    shape = new Konva.Arrow(shapeData);
+                } else if (obj.type === 'star') {
+                    shape = new Konva.Star(shapeData);
+                } else if (obj.type === 'text') {
+                    shape = new Konva.Text(shapeData);
+                } else if (obj.type === 'image') {
+                    if (!obj.imageUrl) return false;
+
+                    const imageObj = new Image();
+                    imageObj.onload = function() {
+                        const img = new Konva.Image({
+                            ...shapeData,
+                            image: imageObj
+                        });
+                        
+                        // ✅ READ-ONLY: No drag, no events
+                        img.draggable(false);
+                        img.listening(false);
+                        
+                        layer.add(img);
+                        layer.batchDraw();
+                    };
+                    imageObj.src = obj.imageUrl;
+                    return true;
+                }
+
+                if (shape) {
+                    // ✅ READ-ONLY: Disable interaction
+                    shape.draggable(false);
+                    shape.listening(false);
+                    
+                    layer.add(shape);
+                    return true;
+                }
+
+                return false;
+            } catch (e) {
+                console.error('Load error:', obj.id, e);
+                return false;
+            }
+        }
+
+        function enablePan() {
+            stage.on('mousedown', function(e) {
+                isPanning = true;
+                lastPointerPosition = stage.getPointerPosition();
+                stage.container().style.cursor = 'grabbing';
+            });
+
+            stage.on('mousemove', function(e) {
+                if (!isPanning) return;
+
+                const pos = stage.getPointerPosition();
+                if (!lastPointerPosition) {
+                    lastPointerPosition = pos;
+                    return;
+                }
+
+                const dx = pos.x - lastPointerPosition.x;
+                const dy = pos.y - lastPointerPosition.y;
+
+                canvasPosition.x += dx;
+                canvasPosition.y += dy;
+
+                updateCanvasTransform();
+                lastPointerPosition = pos;
+            });
+
+            stage.on('mouseup', function() {
+                isPanning = false;
+                lastPointerPosition = null;
+                stage.container().style.cursor = 'grab';
+            });
+
+            // Set default cursor
+            stage.container().style.cursor = 'grab';
+
+            console.log('✓ Pan enabled');
+        }
+
+        function enableZoom() {
+            stage.on('wheel', function(e) {
+                e.evt.preventDefault();
+
+                const oldScale = canvasScale;
+                const pointer = stage.getPointerPosition();
+
+                const mousePointTo = {
+                    x: (pointer.x - canvasPosition.x) / oldScale,
+                    y: (pointer.y - canvasPosition.y) / oldScale
+                };
+
+                const scaleBy = 1.1;
+                const direction = e.evt.deltaY > 0 ? -1 : 1;
+
+                let newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
+                newScale = Math.max(0.1, Math.min(5, newScale));
+
+                canvasScale = newScale;
+
+                canvasPosition.x = pointer.x - mousePointTo.x * newScale;
+                canvasPosition.y = pointer.y - mousePointTo.y * newScale;
+
+                updateCanvasTransform();
+                updateZoomDisplay();
+            });
+
+            console.log('✓ Zoom enabled');
+        }
+
+        function centerCanvas() {
+            const container = document.getElementById('container');
+            const containerWidth = container.offsetWidth;
+            const containerHeight = container.offsetHeight;
+
+            canvasPosition.x = (containerWidth - canvasWidth * canvasScale) / 2;
+            canvasPosition.y = (containerHeight - canvasHeight * canvasScale) / 2;
+
+            updateCanvasTransform();
+        }
+
+        function updateCanvasTransform() {
+            stage.position(canvasPosition);
+            stage.scale({ x: canvasScale, y: canvasScale });
+            layer.batchDraw();
+        }
+
+        function updateZoomDisplay() {
+            const percentage = Math.round(canvasScale * 100);
+            $('#zoomPercentage').text(percentage + '%');
+        }
+
+        function zoomIn() {
+            canvasScale = Math.min(5, canvasScale * 1.2);
+            centerCanvas();
+            updateZoomDisplay();
+        }
+
+        function zoomOut() {
+            canvasScale = Math.max(0.1, canvasScale / 1.2);
+            centerCanvas();
+            updateZoomDisplay();
+        }
+
+        function zoomReset() {
+            canvasScale = 1;
+            centerCanvas();
+            updateZoomDisplay();
+        }
+
+        function zoomFit() {
+            const container = document.getElementById('container');
+            const scaleX = container.offsetWidth / canvasWidth;
+            const scaleY = container.offsetHeight / canvasHeight;
+            canvasScale = Math.min(scaleX, scaleY) * 0.9;
+            centerCanvas();
+            updateZoomDisplay();
+        }
+
+        function goBack() {
+            window.location.href = '/MapView/Index';
+        }
+
+        function editMap() {
+            if (confirm('Chuyển sang chế độ chỉnh sửa?')) {
+                window.location.href = '/Map/Index?openMap=' + mapId;
+            }
+        }
+
+        function showError(message) {
+            $('#loadingOverlay').html(`
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    ${message}
+                </div>
+                <button class="btn btn-primary" onclick="location.reload()">
+                    <i class="bi bi-arrow-clockwise"></i> Thử lại
+                </button>
+            `);
+        }
+    </script>
+</body>
+</html>

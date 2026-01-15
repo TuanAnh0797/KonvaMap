@@ -26,8 +26,8 @@ namespace MapDrawingApp.Models
         public bool IsDeleted { get; set; } = false;
 
         // Optional: Object metadata
-        public string ObjectName { get; set; }
-        public string ObjectDescription { get; set; }
+        public string? ObjectName { get; set; }
+        public string? ObjectDescription { get; set; }
 
         public MapObject()
         {

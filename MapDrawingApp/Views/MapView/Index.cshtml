@@ -1,0 +1,348 @@
+﻿@{
+    ViewData["Title"] = "Xem bản đồ";
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/map.css" />
+    <style>
+        body {
+            background: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .view-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .view-header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+            .view-header h1 {
+                margin: 0 0 10px 0;
+                color: #333;
+                font-size: 32px;
+            }
+
+            .view-header p {
+                margin: 0;
+                color: #666;
+                font-size: 16px;
+            }
+
+        .maps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .map-view-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+            .map-view-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+                border-color: #0d6efd;
+            }
+
+        .map-view-card-thumbnail {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .map-view-card-thumbnail::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: url('data:image/svg+xml,<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" fill="none" stroke="white" stroke-width="0.5" opacity="0.1"/></svg>');
+            }
+
+        .map-view-card-content {
+            padding: 20px;
+        }
+
+        .map-view-card-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin: 0 0 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .map-view-card-description {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+            line-height: 1.5;
+            max-height: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .map-view-card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .map-view-card-info {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+            color: #999;
+        }
+
+        .map-view-card-info-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .map-view-card-button {
+            background: #0d6efd;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+            .map-view-card-button:hover {
+                background: #0b5ed7;
+                transform: scale(1.05);
+            }
+
+        .loading-container {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            border-width: 0.3rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+            .empty-state i {
+                font-size: 80px;
+                color: #dee2e6;
+                margin-bottom: 20px;
+            }
+
+            .empty-state h3 {
+                color: #666;
+                margin-bottom: 10px;
+            }
+
+            .empty-state p {
+                color: #999;
+            }
+
+            .empty-state .btn {
+                margin-top: 20px;
+            }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #0d6efd;
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+            .back-link:hover {
+                color: #0b5ed7;
+                gap: 12px;
+            }
+    </style>
+</head>
+<body>
+    <div class="view-container">
+        <a href="/Map/Index" class="back-link">
+            <i class="bi bi-arrow-left"></i>
+            Quay lại trang vẽ
+        </a>
+
+        <div class="view-header">
+            <h1>
+                <i class="bi bi-eye"></i> Xem bản đồ
+            </h1>
+            <p>Chọn bản đồ để xem (chỉ đọc - không thể chỉnh sửa)</p>
+        </div>
+
+        <div id="mapsContainer">
+            <div class="loading-container">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Đang tải...</span>
+                </div>
+                <p class="mt-3">Đang tải danh sách bản đồ...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/lib/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/jquery/jquery.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            console.log('Loading maps list...');
+            loadMapsList();
+        });
+
+        function loadMapsList() {
+            $.ajax({
+                url: '/MapView/GetAllMaps',
+                type: 'GET',
+                success: function (response) {
+                    if (response.success && response.maps) {
+                        console.log('Maps loaded:', response.maps.length);
+                        displayMaps(response.maps);
+                    } else {
+                        showError('Không thể tải danh sách bản đồ');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error loading maps:', error);
+                    showError('Lỗi khi tải danh sách bản đồ: ' + error);
+                }
+            });
+        }
+
+        function displayMaps(maps) {
+            if (maps.length === 0) {
+                $('#mapsContainer').html(`
+                            <div class="empty-state">
+                                <i class="bi bi-map"></i>
+                                <h3>Chưa có bản đồ nào</h3>
+                                <p>Hãy tạo bản đồ đầu tiên của bạn!</p>
+                                <a href="/Map/Index" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle"></i> Tạo bản đồ mới
+                                </a>
+                            </div>
+                        `);
+                return;
+            }
+
+            let html = '<div class="maps-grid">';
+
+            maps.forEach((map, index) => {
+                const colors = [
+                    'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                    'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                    'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                    'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                    'linear-gradient(135deg, #30cfd0 0%, #330867 100%)'
+                ];
+
+                const gradient = colors[index % colors.length];
+                const updatedDate = new Date(map.updatedAt).toLocaleDateString('vi-VN');
+
+                html += `
+                            <div class="map-view-card" onclick="viewMap(${map.id})">
+                                <div class="map-view-card-thumbnail" style="background: ${gradient};">
+                                    <i class="bi bi-map"></i>
+                                </div>
+                                <div class="map-view-card-content">
+                                    <h3 class="map-view-card-title">
+                                        <i class="bi bi-file-earmark-text"></i>
+                                        ${escapeHtml(map.name)}
+                                    </h3>
+                                    ${map.description ? `
+                                        <p class="map-view-card-description">${escapeHtml(map.description)}</p>
+                                    ` : ''}
+                                    <div class="map-view-card-meta">
+                                        <div class="map-view-card-info">
+                                            <div class="map-view-card-info-item">
+                                                <i class="bi bi-calendar3"></i>
+                                                ${updatedDate}
+                                            </div>
+                                            <div class="map-view-card-info-item">
+                                                <i class="bi bi-layers"></i>
+                                                ${map.objectCount} đối tượng
+                                            </div>
+                                        </div>
+                                        <button class="map-view-card-button" onclick="event.stopPropagation(); viewMap(${map.id})">
+                                            <i class="bi bi-eye"></i> Xem
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+            });
+
+            html += '</div>';
+            $('#mapsContainer').html(html);
+        }
+
+        function viewMap(mapId) {
+            console.log('Viewing map:', mapId);
+            window.location.href = '/MapView/View/' + mapId;
+        }
+
+        function showError(message) {
+            $('#mapsContainer').html(`
+                        <div class="empty-state">
+                            <i class="bi bi-exclamation-triangle text-danger"></i>
+                            <h3>Lỗi</h3>
+                            <p>${message}</p>
+                            <button class="btn btn-primary" onclick="loadMapsList()">
+                                <i class="bi bi-arrow-clockwise"></i> Thử lại
+                            </button>
+                        </div>
+                    `);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

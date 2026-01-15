@@ -21,14 +21,19 @@ namespace MapDrawingApp.Models
         // Thumbnail image (optional)
         public string? ThumbnailUrl { get; set; }
 
-        // Map settings (JSON)
+        // ✅ ADDED: Canvas settings
+        public int CanvasWidth { get; set; } = 1200;
+        public int CanvasHeight { get; set; } = 800;
+
+        // Map settings (JSON) - for future use
         public string? Settings { get; set; }
 
         public Map()
         {
             CreatedAt = DateTime.Now;
             UpdatedAt = DateTime.Now;
+            CanvasWidth = 1200;
+            CanvasHeight = 800;
         }
     }
 }
-
