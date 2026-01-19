@@ -1289,9 +1289,27 @@ function saveObject(shape, type) {
         return;
     }
 
-    const data = JSON.stringify(shape.toObject());
-    let imageUrl = null;
+    // Handle Konva Groups (SCADA symbols)
+    let data;
+    if (shape instanceof Konva.Group) {
+        // Save group as JSON with all children
+        data = JSON.stringify({
+            x: shape.x(),
+            y: shape.y(),
+            scadaType: shape.getAttr('scadaType'),
+            valveType: shape.getAttr('valveType'),
+            tankType: shape.getAttr('tankType'),
+            sensorType: shape.getAttr('sensorType'),
+            switchState: shape.getAttr('switchState'),
+            indicatorColor: shape.getAttr('indicatorColor'),
+            children: shape.children.map(child => child.toObject())
+        });
+        type = 'scada-group';
+    } else {
+        data = JSON.stringify(shape.toObject());
+    }
 
+    let imageUrl = null;
     if (type === 'image') {
         imageUrl = shape.getAttr('librarySource') ||
             shape.getAttr('uploadedUrl') ||
@@ -1311,7 +1329,7 @@ function saveObject(shape, type) {
         success: function (response) {
             if (response.success) {
                 shape.setAttr('dbId', response.id);
-                console.log('✓ Saved ID:', response.id);
+                console.log('✓ Saved ID:', response.id, 'Type:', type);
             }
         }
     });
@@ -1411,7 +1429,34 @@ function loadShape(obj) {
             };
             imageObj.src = obj.imageUrl;
             return true;
-        } else {
+        }
+        // ✅ NEW: Load SCADA groups
+        else if (obj.type === 'scada-group' || obj.type === 'group') {
+            const scadaType = shapeData.scadaType;
+            const subtype = shapeData.valveType || shapeData.tankType ||
+                shapeData.sensorType || shapeData.indicatorColor;
+
+            if (scadaType && window.SCADA) {
+                shape = window.SCADA.addScadaSymbol(scadaType, subtype, shapeData.x, shapeData.y);
+                if (shape) {
+                    shape.setAttr('dbId', obj.id);
+
+                    // Restore switch state
+                    if (shapeData.switchState) {
+                        shape.setAttr('switchState', shapeData.switchState);
+                    }
+
+                    return true;
+                }
+            }
+        }
+
+        // ... rest of existing code ...
+
+
+
+
+        else {
             return false;
         }
 

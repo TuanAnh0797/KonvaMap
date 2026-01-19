@@ -163,6 +163,161 @@
                     </li>
                 </ul>
             </div>
+            <div class="toolbar-group">
+                <div class="btn-group" id="scadaGroup">
+                    <button type="button" class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="bi bi-cpu"></i> <span>SCADA</span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li class="dropdown-header">⚙️ Động cơ & Bơm</li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('motor', null, canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-gear"></i> Động cơ (Motor)
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('pump', null, canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-arrow-repeat"></i> Bơm (Pump)
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('compressor', null, canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-wind"></i> Máy nén
+                            </a>
+                        </li>
+
+                        <li><hr class="dropdown-divider"></li>
+                        <li class="dropdown-header">🚰 Van (Valves)</li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('valve', 'gate', canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-triangle"></i> Van cổng
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('valve', 'ball', canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-circle"></i> Van bi
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('valve', 'check', canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-check-circle"></i> Van 1 chiều
+                            </a>
+                        </li>
+
+                        <li><hr class="dropdown-divider"></li>
+                        <li class="dropdown-header">🛢️ Bồn & Thiết bị</li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('tank', 'vertical', canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-bucket"></i> Bồn đứng
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('tank', 'horizontal', canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-distribute-horizontal"></i> Bồn ngang
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('heatExchanger', null, canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-thermometer"></i> Trao đổi nhiệt
+                            </a>
+                        </li>
+
+                        <li><hr class="dropdown-divider"></li>
+                        <li class="dropdown-header">🎚️ Băng tải (NEW)</li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('conveyor', 'flat', canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-arrow-right-square"></i> Băng tải phẳng
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('conveyor', 'inclined', canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-box-arrow-up-right"></i> Băng tải nghiêng
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('conveyor', 'roller', canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-grip-horizontal"></i> Băng tải con lăn
+                            </a>
+                        </li>
+
+                        <li><hr class="dropdown-divider"></li>
+                        <li class="dropdown-header">📊 Cảm biến</li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('sensor', 'pressure', canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-speedometer"></i> Áp suất (P)
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('sensor', 'temperature', canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-thermometer-half"></i> Nhiệt độ (T)
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('sensor', 'flow', canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-arrow-right-circle"></i> Lưu lượng (F)
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('sensor', 'level', canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-water"></i> Mức (L)
+                            </a>
+                        </li>
+
+                        <li><hr class="dropdown-divider"></li>
+                        <li class="dropdown-header">💡 Đèn báo (NEW)</li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('indicator', 'green', canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-circle-fill text-success"></i> Đèn đơn - Xanh
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('indicator', 'red', canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-circle-fill text-danger"></i> Đèn đơn - Đỏ
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('indicator', 'yellow', canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-circle-fill text-warning"></i> Đèn đơn - Vàng
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('stackLight', 'red,yellow,green', canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-stoplights"></i> Đèn tháp 3 tầng
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('beacon', 'red', canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-exclamation-triangle"></i> Đèn quay - Đỏ
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('beaconStrobe', 'yellow', canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-lightning"></i> Đèn nháy - Vàng
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('emergencyLight', null, canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-sign-stop"></i> Đèn EXIT
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('lightBar', 'red,blue', canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-distribute-horizontal"></i> Thanh đèn cảnh báo
+                            </a>
+                        </li>
+
+                        <li><hr class="dropdown-divider"></li>
+                        <li class="dropdown-header">⚡ Điện</li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="addScadaSymbol('switch', null, canvasWidth/2, canvasHeight/2); return false;">
+                                <i class="bi bi-toggle-off"></i> Công tắc
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+
         </div>
 
         <!-- Content Tools -->
@@ -911,6 +1066,9 @@
     </script>
 
     <script src="~/lib/signalr/signalr.min.js"></script>
+
+    <!-- Then load SCADA symbols -->
+    <script src="~/js/scada-symbols.js"></script>
     <script>
         window.signalRLoaded = typeof signalR !== 'undefined';
         if (!window.signalRLoaded) {
