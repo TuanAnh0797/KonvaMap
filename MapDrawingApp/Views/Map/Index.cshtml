@@ -1038,90 +1038,29 @@
     </div>
 
     <!-- ALL SCRIPTS - KEEP EXACTLY THE SAME -->
-    <script src="~/lib/bootstrap/bootstrap.bundle.min.js"></script>
-    <script>
-        window.bootstrapLoaded = typeof bootstrap !== 'undefined';
-        if (!window.bootstrapLoaded) {
-            console.log('Bootstrap loading from CDN...');
-            document.write('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"><\/script>');
-        }
-    </script>
-
+    <!-- Libraries -->
     <script src="~/lib/jquery/jquery.min.js"></script>
-    <script>
-        window.jQueryLoaded = typeof jQuery !== 'undefined';
-        if (!window.jQueryLoaded) {
-            console.log('jQuery loading from CDN...');
-            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"><\/script>');
-        }
-    </script>
-
     <script src="~/lib/konva/konva.min.js"></script>
-    <script>
-        window.konvaLoaded = typeof Konva !== 'undefined';
-        if (!window.konvaLoaded) {
-            console.log('Konva loading from CDN...');
-            document.write('<script src="https://unpkg.com/konva@8.4.3/konva.min.js"><\/script>');
-        }
-    </script>
-
+    <script src="~/lib/bootstrap/bootstrap.bundle.min.js"></script>
     <script src="~/lib/signalr/signalr.min.js"></script>
 
-    <!-- Then load SCADA symbols -->
+    <!-- Core modules -->
+    <script src="~/js/map-core.js"></script>
+    <script src="~/js/map-boundaries.js"></script>
+    <script src="~/js/map-database.js"></script>
+    <script src="~/js/map-shapes.js"></script>
+    <script src="~/js/map-tools.js"></script>
+    <script src="~/js/map-properties.js"></script>
+    <script src="~/js/map-events.js"></script>
+    <script src="~/js/map-ui.js"></script>
+    <script src="~/js/map-zoom.js"></script>
+    <script src="~/js/map-export.js"></script>
+
+    <!-- Optional features -->
     <script src="~/js/scada-symbols.js"></script>
-    <script>
-        window.signalRLoaded = typeof signalR !== 'undefined';
-        if (!window.signalRLoaded) {
-            console.log('SignalR loading from CDN...');
-            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"><\/script>');
-        }
-    </script>
 
-    <script>
-        (function waitForLibraries() {
-            if (typeof jQuery === 'undefined') {
-                console.log('Waiting for jQuery...');
-                setTimeout(waitForLibraries, 100);
-                return;
-            }
-            if (typeof Konva === 'undefined') {
-                console.log('Waiting for Konva...');
-                setTimeout(waitForLibraries, 100);
-                return;
-            }
-            if (typeof signalR === 'undefined') {
-                console.log('Waiting for SignalR...');
-                setTimeout(waitForLibraries, 100);
-                return;
-            }
-
-            console.log('✓ All libraries loaded successfully!');
-            console.log('jQuery:', typeof jQuery);
-            console.log('Konva:', typeof Konva);
-            console.log('SignalR:', typeof signalR);
-
-            var script1 = document.createElement('script');
-            script1.src = '/js/map.js';
-            script1.onload = function() {
-                console.log('✓ map.js loaded');
-
-                var script2 = document.createElement('script');
-                script2.src = '/js/map-advanced.js';
-                script2.onload = function() {
-                    console.log('✓ map-advanced.js loaded');
-                };
-                script2.onerror = function() {
-                    console.warn('⚠ map-advanced.js failed to load (optional)');
-                };
-                document.body.appendChild(script2);
-            };
-            script1.onerror = function() {
-                console.error('✗ map.js failed to load!');
-                alert('Lỗi: Không thể load map.js. Vui lòng kiểm tra file.');
-            };
-            document.body.appendChild(script1);
-        })();
-    </script>
+    <!-- Main orchestrator (MUST BE LAST) -->
+    <script src="~/js/map.js"></script>
 
 </body>
 </html>
