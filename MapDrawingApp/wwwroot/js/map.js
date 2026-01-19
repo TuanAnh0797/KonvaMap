@@ -46,6 +46,10 @@ $(document).ready(function () {
     updateStatus('Sẵn sàng - Không thể vẽ/kéo ra ngoài canvas');
     $('#connectionStatus').removeClass('bg-secondary bg-warning').addClass('bg-success').text('Ready');
 
+
+
+
+
     console.log('=== MAP.JS READY ===');
 });
 
@@ -2348,6 +2352,147 @@ function downloadFile(dataUrl, filename) {
 // $('#loadBtn').on('click', function() {
 //     loadAllObjects();
 // });
+
+
+// ============= DROPDOWN TOOL SELECTION =============
+
+function setTool(tool) {
+    // Cancel polygon if switching tools
+    if (isDrawingPolygon && tool !== 'polygon') {
+        cancelPolygon();
+    }
+
+    currentTool = tool;
+    updateToolButtons();
+    updateDropdownLabels();
+    deselectAll();
+    updateCursor();
+
+    const toolNames = {
+        'select': 'Chọn đối tượng',
+        'rect': 'Vẽ chữ nhật',
+        'circle': 'Vẽ hình tròn',
+        'ellipse': 'Vẽ ellipse',
+        'triangle': 'Vẽ tam giác',
+        'star': 'Vẽ ngôi sao',
+        'polygon': 'Vẽ đa giác',
+        'line': 'Vẽ đường thẳng',
+        'arrow': 'Vẽ mũi tên'
+    };
+
+    updateStatus(toolNames[tool] || 'Tool: ' + tool);
+}
+
+function updateToolButtons() {
+    // Remove active state from all buttons
+    $('.top-toolbar .btn').removeClass('active btn-primary').addClass('btn-outline-primary');
+    $('.top-toolbar .dropdown-item').removeClass('active');
+    $('.top-toolbar .btn-group').removeClass('has-active-tool');
+
+    const buttonMap = {
+        'select': '#selectBtn',
+        'rect': '#rectDropdown',
+        'circle': '#circleDropdown',
+        'ellipse': '#ellipseDropdown',
+        'triangle': '#triangleDropdown',
+        'star': '#starDropdown',
+        'polygon': '#polygonDropdown',
+        'line': '#lineDropdown',
+        'arrow': '#arrowDropdown'
+    };
+
+    // Activate current tool
+    if (buttonMap[currentTool]) {
+        if (currentTool === 'select') {
+            $(buttonMap[currentTool]).removeClass('btn-outline-primary').addClass('btn-primary active');
+        } else {
+            // Dropdown item
+            $(buttonMap[currentTool]).addClass('active');
+
+            // Mark the group as having active tool
+            $('#shapesGroup').addClass('has-active-tool');
+        }
+    }
+}
+
+function updateDropdownLabels() {
+    const shapeNames = {
+        'rect': 'Chữ nhật',
+        'circle': 'Hình tròn',
+        'ellipse': 'Ellipse',
+        'triangle': 'Tam giác',
+        'star': 'Ngôi sao',
+        'polygon': 'Đa giác',
+        'line': 'Đường thẳng',
+        'arrow': 'Mũi tên'
+    };
+
+    const shapeIcons = {
+        'rect': 'bi-square',
+        'circle': 'bi-circle',
+        'ellipse': 'bi-egg',
+        'triangle': 'bi-triangle',
+        'star': 'bi-star',
+        'polygon': 'bi-hexagon',
+        'line': 'bi-dash-lg',
+        'arrow': 'bi-arrow-right'
+    };
+
+    // Update shape dropdown label
+    if (shapeNames[currentTool]) {
+        const icon = shapeIcons[currentTool] || 'bi-shapes';
+        $('#currentShapeName').html(`<i class="bi ${icon}"></i> ${shapeNames[currentTool]}`);
+    } else {
+        $('#currentShapeName').html('Hình vẽ');
+    }
+}
+
+// ============= ENSURE DROPDOWN WORKS CORRECTLY =============
+
+
+
+// ============= ALTERNATIVE: Manual Dropdown Control (if Bootstrap fails) =============
+
+// Use this if Bootstrap dropdown doesn't work
+function initManualDropdown() {
+    $('.dropdown-toggle').on('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const menu = $(this).next('.dropdown-menu');
+        const isOpen = menu.hasClass('show');
+
+        // Close all other dropdowns
+        $('.dropdown-menu').removeClass('show');
+
+        // Toggle this dropdown
+        if (!isOpen) {
+            menu.addClass('show');
+        }
+    });
+
+    // Close dropdown when clicking outside
+    $(document).on('click', function (e) {
+        if (!$(e.target).closest('.btn-group').length) {
+            $('.dropdown-menu').removeClass('show');
+        }
+    });
+
+    // Close dropdown when clicking item
+    $('.dropdown-item').on('click', function () {
+        $(this).closest('.dropdown-menu').removeClass('show');
+    });
+
+    console.log('✓ Manual dropdown initialized');
+}
+
+// Uncomment if Bootstrap dropdown doesn't work:
+// $(document).ready(function() {
+//     initManualDropdown();
+// });
+
+// Force show dropdown manually
+
 
 console.log('✓ Export/Import functions loaded');
 

@@ -104,6 +104,7 @@
 <body>
 
     <!-- TOP TOOLBAR (New) -->
+    <!-- TOP TOOLBAR (Grouped with Dropdowns) -->
     <div class="top-toolbar">
         <!-- Select Tool -->
         <div class="toolbar-group">
@@ -112,32 +113,56 @@
             </button>
         </div>
 
-        <!-- Drawing Tools -->
+        <!-- Drawing Tools - GROUPED -->
         <div class="toolbar-group">
-            <button id="rectBtn" class="btn btn-sm">
-                <i class="bi bi-square"></i> Chữ nhật
-            </button>
-            <button id="circleBtn" class="btn btn-sm">
-                <i class="bi bi-circle"></i> Tròn
-            </button>
-            <button id="ellipseBtn" class="btn btn-sm">
-                <i class="bi bi-egg"></i> Ellipse
-            </button>
-            <button id="lineBtn" class="btn btn-sm">
-                <i class="bi bi-dash-lg"></i> Đường
-            </button>
-            <button id="triangleBtn" class="btn btn-sm">
-                <i class="bi bi-triangle"></i> Tam giác
-            </button>
-            <button id="starBtn" class="btn btn-sm">
-                <i class="bi bi-star"></i> Sao
-            </button>
-            <button id="arrowBtn" class="btn btn-sm">
-                <i class="bi bi-arrow-right"></i> Mũi tên
-            </button>
-            <button id="polygonBtn" class="btn btn-sm">
-                <i class="bi bi-hexagon"></i> Đa giác
-            </button>
+            <div class="btn-group" id="shapesGroup">
+                <button type="button" class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="bi bi-shapes"></i> <span id="currentShapeName">Hình vẽ</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item" href="#" id="rectDropdown" onclick="setTool('rect'); return false;">
+                            <i class="bi bi-square"></i> Chữ nhật
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#" id="circleDropdown" onclick="setTool('circle'); return false;">
+                            <i class="bi bi-circle"></i> Hình tròn
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#" id="ellipseDropdown" onclick="setTool('ellipse'); return false;">
+                            <i class="bi bi-egg"></i> Ellipse
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#" id="triangleDropdown" onclick="setTool('triangle'); return false;">
+                            <i class="bi bi-triangle"></i> Tam giác
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#" id="starDropdown" onclick="setTool('star'); return false;">
+                            <i class="bi bi-star"></i> Ngôi sao
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#" id="polygonDropdown" onclick="setTool('polygon'); return false;">
+                            <i class="bi bi-hexagon"></i> Đa giác
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="#" id="lineDropdown" onclick="setTool('line'); return false;">
+                            <i class="bi bi-dash-lg"></i> Đường thẳng
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#" id="arrowDropdown" onclick="setTool('arrow'); return false;">
+                            <i class="bi bi-arrow-right"></i> Mũi tên
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </div>
 
         <!-- Content Tools -->
@@ -163,10 +188,9 @@
                 <i class="bi bi-save"></i> Lưu
             </button>
 
-            <div class="btn-group" role="group">
-                <button id="exportBtn" class="btn btn-sm dropdown-toggle"
-                        data-bs-toggle="dropdown">
-                    <i class="bi bi-download"></i> Xuất
+            <div class="btn-group">
+                <button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="bi bi-download"></i> Xuất/Nhập
                 </button>
                 <ul class="dropdown-menu">
                     <li>
@@ -192,7 +216,6 @@
                     </li>
                 </ul>
             </div>
-            <input type="file" id="jsonImportInput" accept=".json" style="display: none;">
         </div>
 
         <!-- Map Manager -->
